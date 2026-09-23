@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KDS">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="KDS">
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+    <meta name="msapplication-TileImage" content="/assets/icons/icon-144.png">
+
+    <title>KDS</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.ico" type="image/x-icon" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+
+    <meta itemprop="name" content="KD Space">
+    <meta itemprop="description" content="A creative 3D space exploration">
+    <meta itemprop="image" content="https://my-room-in-3d.vercel.app/social/share-1200x630.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KD Space">
+    <meta name="twitter:description" content="A creative 3D space exploration">
+    <meta name="twitter:image" content="https://my-room-in-3d.vercel.app/social/share-1200x630.png">
+
+    <meta property="og:site_name" content="KD Space">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="KD Space">
+    <meta property="og:description" content="A creative 3D space exploration">
+    <meta property="og:image" content="https://my-room-in-3d.vercel.app/social/share-1200x630.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="experience"></div>
+    <div class="credits"></div>
+
+    <div class="intro-screen">
+        <div class="intro-logo">
+            <img src="/assets/kdlogodev.png" alt="KDS">
+        </div>
+        <div class="intro-subtitle">SPACE</div>
+        <button class="intro-enter-btn">Enter Room</button>
+    </div>
+
+    <button class="studio-mode-btn">Studio</button>
+
+    <div class="studio-panel">
+        <div class="studio-panel-header">
+            <span>Studio Mode</span>
+            <button class="studio-panel-close">&times;</button>
+        </div>
+        <div class="studio-panel-body">
+            <div class="studio-section">
+                <label class="studio-label">Import</label>
+                <input type="file" class="studio-file-input" accept=".glb,.gltf">
+                <button class="studio-upload-btn">Upload GLB/GLTF</button>
+            </div>
+            <div class="studio-section">
+                <label class="studio-label">Primitives</label>
+                <div class="studio-primitive-btns">
+                    <button class="studio-add-cube">Cube</button>
+                    <button class="studio-add-sphere">Sphere</button>
+                    <button class="studio-add-cylinder">Cylinder</button>
+                    <button class="studio-add-plane">Plane</button>
+                </div>
+            </div>
+            <div class="studio-section">
+                <label class="studio-label">Transform</label>
+                <div class="studio-transform-btns">
+                    <button class="studio-transform-btn active" data-mode="translate">Move</button>
+                    <button class="studio-transform-btn" data-mode="rotate">Rotate</button>
+                    <button class="studio-transform-btn" data-mode="scale">Scale</button>
+                </div>
+            </div>
+            <div class="studio-section">
+                <label class="studio-label">Objects</label>
+                <div class="studio-object-list"></div>
+                <button class="studio-remove-btn">Remove Selected</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
