@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: KD Space Live Site
+    url: https://kd-space.pages.dev
+    about: Check the live site
+  - name: GitHub Repository
+    url: https://github.com/ctaxnagomi/kd-space
+    about: View the source code

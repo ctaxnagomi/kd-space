@@ -135,8 +135,21 @@ export default class Studio
         this.gltfLoader.load(url, (gltf) =>
         {
             const model = gltf.scene
-            model.scale.setScalar(0.01)
-            model.position.set(0, 0, 0)
+
+            const box = new THREE.Box3().setFromObject(model)
+            const size = box.getSize(new THREE.Vector3())
+            const maxDim = Math.max(size.x, size.y, size.z)
+
+            if(maxDim > 0)
+            {
+                const targetSize = 2
+                const scale = targetSize / maxDim
+                model.scale.setScalar(scale)
+            }
+
+            const center = box.getCenter(new THREE.Vector3())
+            model.position.set(-center.x * model.scale.x, -center.y * model.scale.y, -center.z * model.scale.z)
+
             this.addObject(model)
             URL.revokeObjectURL(url)
         }, undefined, (error) =>
