@@ -14,29 +14,83 @@ A creative 3D room/space exploration built with **Three.js** — featuring a **S
 
 ---
 
+## Vision & Roadmap
+
+KD Space is more than a 3D room — it's a **social metaverse gateway** for the KD community. Every KD member is entitled to their own personal KD Space — a custom 3D room they can decorate, modify, and call their own.
+
+### Objectives
+
+- **Personal KD Spaces** — Every member gets their own 3D room with unique identity and layout
+- **Real-Time Presence** — Visit other members' spaces and see who's online / offline in real time
+- **Peer Messaging** — Seamless messaging between members inside any KD Space via WebRTC
+- **Social Evolution** — Gradually evolve from 3D chat rooms into a lightweight social game layer
+- **Tally Integration** — Connect with [jalanmalaysia.com](https://kl.jalanmalaysia.com) as a partner platform for cross-experience engagement
+
+### The Journey
+
+```
+     ┌─────────────────────────────────────────────────┐
+     │               KD Space Ecosystem                │
+     ├─────────────────────────────────────────────────┤
+     │                                                 │
+     │  ┌──────────┐    ┌──────────┐    ┌──────────┐   │
+     │  │   Your   │    │  Their   │    │   The    │   │
+     │  │ KD Space │◄──►│ KD Space │◄──►│  Square  │   │
+     │  │          │    │          │    │(Coming)  │   │
+     │  └──────────┘    └──────────┘    └──────────┘   │
+     │       │               │               │          │
+     │       ▼               ▼               ▼          │
+     │  ┌──────────┐    ┌──────────┐    ┌──────────┐   │
+     │  │  Decorate│    │  Visit   │    │  Events  │   │
+     │  │  Upload  │    │  Chat    │    │  Social  │   │
+     │  │  Studio  │    │  Online  │    │  Games   │   │
+     │  └──────────┘    └──────────┘    └──────────┘   │
+     │                                                 │
+     └─────────────────────────────────────────────────┘
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │  Checkpoint → Enter │
+              │   Your KD Space     │
+              └─────────────────────┘
+```
+
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   KD Space                          │
-├──────────────┬──────────────────────────────────────┤
-│   Normal Mode│  Studio Mode                        │
-│  ┌─────────┐ │  ┌──────────┐ ┌───────────┐         │
-│  │  Room  │ │  │ Upload   │ │ Transform │         │
-│  │  Tour  │ │  │ GLB/GLTF │ │ Controls  │         │
-│  │        │ │  └──────────┘ └───────────┘         │
-│  │  Baked │ │  ┌──────────┐ ┌─────────────────┐   │
-│  │  Scene │ │  │Primitives│ │ Object List     │   │
-│  │        │ │  │Box/Sphere│ │ Select / Remove │   │
-│  │ Bounce │ │  │Cyl/Plane │ └─────────────────┘   │
-│  │  Logo  │ │  └──────────┘                        │
-│  └─────────┘ │  ┌────────────────┐                  │
-│              │  │  OrbitControls │                  │
-│              │  │  + Grid + LIght│                  │
-│              │  └────────────────┘                  │
-├──────────────┴──────────────────────────────────────┤
-│              Intro Screen (KDS Logo + "SPACE")      │
-│              Enter Room → Studio Toggle             │
+│              KD Space Ecosystem                     │
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│        ┌─────────────────────────────────┐          │
+│        │   Checkpoint → Enter KD Space   │          │
+│        └──────────┬──────────────────────┘          │
+│                   ▼                                 │
+│  ┌──────────────┬──────────────────────────────────┐│
+│  │   Normal Mode│  Studio Mode                    ││
+│  │  ┌─────────┐ │  ┌──────────┐ ┌───────────┐     ││
+│  │  │  Room  │ │  │ Upload   │ │ Transform │     ││
+│  │  │  Tour  │ │  │ GLB/GLTF │ │ Controls  │     ││
+│  │  │        │ │  └──────────┘ └───────────┘     ││
+│  │  │  Baked │ │  ┌──────────┐ ┌─────────────┐   ││
+│  │  │  Scene │ │  │Primitives│ │ Object List │   ││
+│  │  │        │ │  │Box/Sphere│ │Sel / Remove │   ││
+│  │  │ Bounce │ │  │Cyl/Plane │ └─────────────┘   ││
+│  │  │  Logo  │ │  └──────────┘                    ││
+│  │  └─────────┘ │  ┌────────────────┐              ││
+│  │              │  │  OrbitControls│              ││
+│  │              │  │  + Grid + LIght              ││
+│  │              │  └────────────────┘              ││
+│  └──────────────┴──────────────────────────────────┘│
+│                   │                                 │
+│                   ▼                                 │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  Social Layer (Future)                        │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────────┐  │  │
+│  │  │ Visit    │ │ Chat     │ │ Tally        │  │  │
+│  │  │ Spaces   │ │ WebRTC   │ │ Integration  │  │  │
+│  │  └──────────┘ └──────────┘ └──────────────┘  │  │
+│  └───────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
 ```
 
