@@ -234,4 +234,7 @@ Built with KD Space — inspired by Bruno Simon, powered by KrackedDevs (github.
 
 ---
 
-*Inspired by [Bruno Simon's My Room in 3D](https://github.com/brunosimon/my-room-in-3d).*
+*Inspired by [Bruno Simon's My Room in 3D](https://github.com/brunosimon/my-room-in-3d)*  
+*Built by [@ctaxnagomi](https://github.com/ctaxnagomi) · Powered by [KrackedDevs](https://www.krackeddevs.com)*
+
+> ⚠️ **Bro Credit Notice** — If you fork, clone, or deploy any version of this project, you must retain the three credits above (Bruno Simon, @ctaxnagomi, KrackedDevs) in your README, application footer, or credits screen. No exceptions. Bro code.
