@@ -27,6 +27,7 @@ export default [
             { name: 'lightMapTexture', source: '/assets/lightMap.jpg', type: 'texture' },
             { name: 'roomModel', source: '/assets/roomModel.glb' },
             { name: 'deskPlantModel', source: '/assets/deskPlant.glb' },
+            { name: 'deskLampModel', source: '/assets/deskLamp.glb' },
         ]
     }
 ]

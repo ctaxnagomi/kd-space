@@ -114,6 +114,7 @@ export default class Studio
         document.querySelector('.studio-add-cylinder').addEventListener('click', () => this.addPrimitive('cylinder'))
         document.querySelector('.studio-add-plane').addEventListener('click', () => this.addPrimitive('plane'))
         document.querySelector('.studio-add-plant').addEventListener('click', () => this.addPlant())
+        document.querySelector('.studio-add-lamp').addEventListener('click', () => this.addLamp())
     }
 
     toggle()
@@ -243,6 +244,18 @@ export default class Studio
         const model = this.resources.items.deskPlantModel.scene.clone(true)
         model.name = 'Desk Plant'
         model.userData.kdSource = { kind: 'plant' }
+        this.prepareModelMaterials(model)
+
+        this.addObject(model)
+    }
+
+    addLamp()
+    {
+        if(!this.resources.items.deskLampModel) return
+
+        const model = this.resources.items.deskLampModel.scene.clone(true)
+        model.name = 'Desk Lamp'
+        model.userData.kdSource = { kind: 'lamp' }
         this.prepareModelMaterials(model)
 
         this.addObject(model)
@@ -480,6 +493,17 @@ export default class Studio
 
             const model = this.resources.items.deskPlantModel.scene.clone(true)
             model.userData.kdSource = { kind: 'plant' }
+            this.prepareModelMaterials(model)
+            if(_entry.name) model.name = _entry.name
+            return model
+        }
+
+        if(source.kind === 'lamp')
+        {
+            if(!this.resources.items.deskLampModel) return null
+
+            const model = this.resources.items.deskLampModel.scene.clone(true)
+            model.userData.kdSource = { kind: 'lamp' }
             this.prepareModelMaterials(model)
             if(_entry.name) model.name = _entry.name
             return model

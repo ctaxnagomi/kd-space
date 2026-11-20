@@ -9,6 +9,7 @@ import ElgatoLight from './ElgatoLight.js'
 import BouncingLogo from './BouncingLogo.js'
 import Screen from './Screen.js'
 import DeskPlant from './DeskPlant.js'
+import DeskLamp from './DeskLamp.js'
 
 export default class World
 {
@@ -32,6 +33,7 @@ export default class World
                 this.setBouncingLogo()
                 this.setScreens()
                 this.setDeskPlant()
+                this.setDeskLamp()
             }
         })
     }
@@ -74,6 +76,11 @@ export default class World
     setDeskPlant()
     {
         this.deskPlant = new DeskPlant()
+    }
+
+    setDeskLamp()
+    {
+        this.deskLamp = new DeskLamp()
     }
 
     setScreens()

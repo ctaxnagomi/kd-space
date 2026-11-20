@@ -106,6 +106,9 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Add Primitive ──► Cube / Sphere / Cylinder / Plane
        │                      Placed at origin with default material
        │
+       ├── Add Prop ──► Desk Plant / Desk Lamp (Blender-made GLBs)
+       │                 Placed at origin; editable with transform gizmos
+       │
        ├── Select Object ──► TransformControls attach
        │    │                 Move / Rotate / Scale gizmo
        │    └── Remove ──► Deletes from scene & list
