@@ -15,6 +15,7 @@ export default class Studio
         this.time = this.experience.time
         this.sizes = this.experience.sizes
         this.navigation = this.experience.navigation
+        this.resources = this.experience.resources
 
         this.active = false
         this.objects = []
@@ -100,6 +101,7 @@ export default class Studio
         document.querySelector('.studio-add-sphere').addEventListener('click', () => this.addPrimitive('sphere'))
         document.querySelector('.studio-add-cylinder').addEventListener('click', () => this.addPrimitive('cylinder'))
         document.querySelector('.studio-add-plane').addEventListener('click', () => this.addPrimitive('plane'))
+        document.querySelector('.studio-add-plant').addEventListener('click', () => this.addPlant())
     }
 
     toggle()
@@ -174,6 +176,28 @@ export default class Studio
         const mesh = new THREE.Mesh(geometry, material)
         mesh.position.set(0, 0.5, 0)
         this.addObject(mesh)
+    }
+
+    addPlant()
+    {
+        if(!this.resources.items.deskPlantModel) return
+
+        // Clone the loaded GLB so every placed plant is an independent object.
+        const model = this.resources.items.deskPlantModel.scene.clone(true)
+        model.name = 'Desk Plant'
+
+        model.traverse((_child) =>
+        {
+            if(!_child.isMesh) return
+            const materials = Array.isArray(_child.material) ? _child.material : [_child.material]
+            for(const _material of materials)
+            {
+                if(_material)
+                    _material.side = THREE.DoubleSide
+            }
+        })
+
+        this.addObject(model)
     }
 
     addObject(object)

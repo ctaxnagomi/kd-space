@@ -26,6 +26,7 @@ export default [
             { name: 'bakedNeutralTexture', source: '/assets/bakedNeutral.jpg', type: 'texture' },
             { name: 'lightMapTexture', source: '/assets/lightMap.jpg', type: 'texture' },
             { name: 'roomModel', source: '/assets/roomModel.glb' },
+            { name: 'deskPlantModel', source: '/assets/deskPlant.glb' },
         ]
     }
 ]
