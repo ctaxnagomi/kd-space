@@ -124,6 +124,9 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Copy Share Link ──► Encodes the arrangement in the URL hash
        │                       (built-in props + primitives only)
        │
+       ├── Reset Layout ──► After confirmation, clears the saved layout and
+       │                    share hash, then restores the default scene
+       │
        └── OrbitControls ──► Free camera navigation
 ```
 
@@ -139,6 +142,10 @@ Only changes from the default scene are stored: removed scene objects, moved or
 resized ones, and added objects. An untouched room therefore produces a link a
 few hundred bytes long instead of listing all 27 objects. Saving a layout
 clears an old share hash so it cannot override the newer saved layout.
+
+**Reset Layout** asks for confirmation, then removes the browser save and any
+share hash and rebuilds the default 27-object scene — a clean starting point
+after experimenting with a shared space.
 
 ---
 

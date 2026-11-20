@@ -98,11 +98,13 @@ export default class Studio
         this.saveBtn = document.querySelector('.studio-save-btn')
         this.loadBtn = document.querySelector('.studio-load-btn')
         this.shareBtn = document.querySelector('.studio-share-btn')
+        this.resetBtn = document.querySelector('.studio-reset-btn')
         this.statusEl = document.querySelector('.studio-status')
 
         this.saveBtn.addEventListener('click', () => this.saveLayout())
         this.loadBtn.addEventListener('click', () => this.loadLayout())
         this.shareBtn.addEventListener('click', () => this.copyShareLink())
+        this.resetBtn.addEventListener('click', () => this.resetLayout())
         this.modeBtn.addEventListener('click', () => this.toggle())
         this.closeBtn.addEventListener('click', () => this.toggle())
         this.uploadBtn.addEventListener('click', () => this.fileInput.click())
@@ -623,6 +625,54 @@ export default class Studio
             copied ? `Share link copied${note}.` : `Link is in the address bar${note}.`,
             'success'
         )
+    }
+
+    resetLayout()
+    {
+        if(!this.hasCollectedStock)
+        {
+            this.setStatus('Default catalog is not ready yet.', 'error')
+            return
+        }
+
+        if(!window.confirm('Reset the space to the default scene? Your saved layout and share link will be removed.'))
+            return
+
+        try
+        {
+            localStorage.removeItem(this.storageKey)
+        }
+        catch(_error)
+        {
+            console.error('KD Space: could not clear saved layout', _error)
+        }
+
+        // A share hash would otherwise restore the old layout on the next reload.
+        if(window.location.hash)
+            window.history.replaceState(null, '', window.location.pathname + window.location.search)
+
+        this.clearObjects()
+
+        for(const [id, defaults] of this.stockDefaults)
+        {
+            const object = this.stockCatalog.get(id)
+            if(!object) continue
+
+            if(Array.isArray(defaults.position)) object.position.fromArray(defaults.position)
+            if(Array.isArray(defaults.rotation)) object.rotation.set(...defaults.rotation)
+            if(Array.isArray(defaults.scale)) object.scale.fromArray(defaults.scale)
+
+            object.userData.kdSource = { kind: 'stock', id }
+            this.scene.add(object)
+            this.objects.push(object)
+        }
+
+        if(this.active && this.objects.length > 0)
+            this.selectObject(0)
+        else
+            this.updateObjectList()
+
+        this.setStatus(`Restored ${this.objects.length} default object(s).`, 'success')
     }
 
     restoreInitialLayout()

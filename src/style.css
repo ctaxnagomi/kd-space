@@ -316,7 +316,20 @@ body
     color: #ff453a;
 }
 
-.studio-share-btn { grid-column: 1 / -1; }
+.studio-share-btn,
+.studio-reset-btn { grid-column: 1 / -1; }
+.studio-reset-btn
+{
+    background: rgba(255, 69, 58, 0.1);
+    border-color: rgba(255, 69, 58, 0.2);
+    color: rgba(255, 69, 58, 0.8);
+}
+.studio-reset-btn:hover
+{
+    background: rgba(255, 69, 58, 0.2);
+    border-color: rgba(255, 69, 58, 0.35);
+    color: #ff453a;
+}
 
 .studio-status
 {
