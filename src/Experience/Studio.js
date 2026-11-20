@@ -27,6 +27,7 @@ export default class Studio
 
         // Default catalog: the objects already in the scene at startup.
         this.stockCatalog = new Map()
+        this.stockDefaults = new Map()
         this.hasCollectedStock = false
 
         this.gltfLoader = new GLTFLoader()
@@ -153,6 +154,11 @@ export default class Studio
             if(!object.name) object.name = `Scene Object ${index}`
 
             this.stockCatalog.set(id, object)
+            this.stockDefaults.set(id, {
+                position: object.position.toArray(),
+                rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+                scale: object.scale.toArray()
+            })
             this.objects.push(object)
         }
 
@@ -428,28 +434,75 @@ export default class Studio
         }
     }
 
-    encodeLayout(_layout)
+    encodeShareLayout()
     {
-        // Compact keys keep the URL short. Uploaded GLBs are deliberately
-        // excluded by copyShareLink() — their data URLs make URLs unusable.
-        const compact = {
-            v: 1,
-            o: _layout.objects.map((_object) => ({
-                n: _object.name || '',
-                t: _object.source.kind,
-                s: _object.source.shape || '',
-                i: _object.source.id || '',
-                p: _object.position,
-                r: _object.rotation,
-                c: _object.scale
-            }))
+        // Only encode what differs from the default scene: removed stock ids,
+        // changed stock transforms, and added objects. The receiver rebuilds
+        // the full catalog, so links stay short even with 27 scene objects.
+        const removed = []
+        const modified = []
+        const added = []
+
+        for(const [id] of this.stockDefaults)
+        {
+            const object = this.objects.find((_object) => _object.userData.kdSource?.id === id)
+            if(!object)
+            {
+                removed.push(id)
+                continue
+            }
+
+            const current = {
+                position: object.position.toArray(),
+                rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+                scale: object.scale.toArray()
+            }
+
+            if(!this.transformsMatch(current, this.stockDefaults.get(id)))
+            {
+                modified.push({
+                    i: id,
+                    p: current.position,
+                    r: current.rotation,
+                    c: current.scale
+                })
+            }
         }
 
-        const json = JSON.stringify(compact)
+        for(const object of this.objects)
+        {
+            const source = object.userData.kdSource || {}
+            if(source.kind === 'stock' || source.kind === 'upload') continue
+
+            added.push({
+                n: object.name || '',
+                t: source.kind,
+                s: source.shape || '',
+                p: object.position.toArray(),
+                r: [object.rotation.x, object.rotation.y, object.rotation.z],
+                c: object.scale.toArray()
+            })
+        }
+
+        const json = JSON.stringify({ v: 2, r: removed, m: modified, u: added })
         return btoa(unescape(encodeURIComponent(json)))
             .replace(/\+/g, '-')
             .replace(/\//g, '_')
             .replace(/=+$/, '')
+    }
+
+    transformsMatch(_a, _b)
+    {
+        if(!_a || !_b) return false
+
+        return [['position', 'position'], ['rotation', 'rotation'], ['scale', 'scale']]
+            .every(([keyA, keyB]) =>
+            {
+                const a = _a[keyA]
+                const b = _b[keyB]
+                return Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
+                    a.every((_value, _index) => Math.abs(_value - b[_index]) < 1e-6)
+            })
     }
 
     decodeLayout(_value)
@@ -459,7 +512,49 @@ export default class Studio
             const padded = _value.replace(/-/g, '+').replace(/_/g, '/')
             const json = decodeURIComponent(escape(atob(padded)))
             const compact = JSON.parse(json)
-            if(!compact || !Array.isArray(compact.o)) return null
+            if(!compact) return null
+
+            if(compact.v === 2)
+            {
+                const removed = Array.isArray(compact.r) ? compact.r : []
+                const modified = new Map(
+                    (Array.isArray(compact.m) ? compact.m : []).map((_entry) => [_entry.i, _entry])
+                )
+                const objects = []
+
+                for(const [id, defaults] of this.stockDefaults)
+                {
+                    if(removed.includes(id)) continue
+
+                    const stock = this.stockCatalog.get(id)
+                    const change = modified.get(id)
+                    objects.push({
+                        name: stock ? stock.name : `Scene Object ${id}`,
+                        source: { kind: 'stock', id },
+                        position: change && Array.isArray(change.p) ? change.p : defaults.position,
+                        rotation: change && Array.isArray(change.r) ? change.r : defaults.rotation,
+                        scale: change && Array.isArray(change.c) ? change.c : defaults.scale
+                    })
+                }
+
+                for(const entry of (Array.isArray(compact.u) ? compact.u : []))
+                {
+                    objects.push({
+                        name: entry.n,
+                        source: entry.t === 'primitive'
+                            ? { kind: 'primitive', shape: entry.s }
+                            : { kind: entry.t },
+                        position: entry.p,
+                        rotation: entry.r,
+                        scale: entry.c
+                    })
+                }
+
+                return { version: 2, objects }
+            }
+
+            // Legacy links from before the compact format.
+            if(!Array.isArray(compact.o)) return null
 
             return {
                 version: 1,
@@ -508,7 +603,7 @@ export default class Studio
             return
         }
 
-        const encoded = this.encodeLayout({ objects: this.serializeObjects(shareable) })
+        const encoded = this.encodeShareLayout()
         const url = `${window.location.origin}${window.location.pathname}#space=${encoded}`
         window.history.replaceState(null, '', url)
 
@@ -648,7 +743,19 @@ export default class Studio
         if(source.kind === 'stock')
         {
             // Original scene objects are cached before any are removed.
-            return this.stockCatalog.get(source.id) || null
+            const stock = this.stockCatalog.get(source.id)
+            if(!stock) return null
+
+            // Reset to the startup transform before the saved transform is applied.
+            const defaults = this.stockDefaults.get(source.id)
+            if(defaults)
+            {
+                if(Array.isArray(defaults.position)) stock.position.fromArray(defaults.position)
+                if(Array.isArray(defaults.rotation)) stock.rotation.set(...defaults.rotation)
+                if(Array.isArray(defaults.scale)) stock.scale.fromArray(defaults.scale)
+            }
+
+            return stock
         }
 
         if(source.kind === 'primitive')

@@ -135,6 +135,11 @@ no backend or account needed. A shared link takes priority over the local saved
 layout. Uploaded GLBs are excluded from links because embedding their file data
 would make URLs unusable; the status line tells you how many were skipped.
 
+Only changes from the default scene are stored: removed scene objects, moved or
+resized ones, and added objects. An untouched room therefore produces a link a
+few hundred bytes long instead of listing all 27 objects. Saving a layout
+clears an old share hash so it cannot override the newer saved layout.
+
 ---
 
 ## Content
