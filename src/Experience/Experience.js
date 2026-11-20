@@ -11,6 +11,7 @@ import Camera from './Camera.js'
 import World from './World.js'
 import Navigation from './Navigation.js'
 import Studio from './Studio.js'
+import Social from './Social.js'
 
 import assets from './assets.js'
 
@@ -37,6 +38,7 @@ export default class Experience
 
         this.time = new Time()
         this.sizes = new Sizes()
+        this.setSocial()
         this.setConfig()
         this.setStats()
         this.setDebug()
@@ -141,6 +143,11 @@ export default class Experience
     setStudio()
     {
         this.studio = new Studio()
+    }
+
+    setSocial()
+    {
+        this.social = new Social()
     }
 
     update()

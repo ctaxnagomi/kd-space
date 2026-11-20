@@ -55,6 +55,38 @@ KD Space is more than a 3D room — it's a **social metaverse gateway** for the 
               └─────────────────────┘
 ```
 
+### Social layer plan
+
+The social layer is **local-first**. Share links already work with no backend,
+so identity and space ownership are scaffolded in browser storage first;
+presence and messaging attach to those same ids when a signalling service exists.
+
+| Phase | Feature | Status | Depends on |
+|-------|---------|--------|------------|
+| 0 | Guest identity + space metadata in `localStorage` | **Done** | — |
+| 1 | Profile chip and display-name editing in the room | Planned | Phase 0 |
+| 2 | Named spaces via short `?space=` id + ownership claim | Planned | Auth/sign-in decision |
+| 3 | Presence — who is online in a space | Planned | Signalling service |
+| 4 | Peer messaging over a WebRTC data channel | Planned | Phase 3 + STUN/TURN |
+| 5 | Tally / KrackedDevs cross-experience handoff | Planned | Partner API |
+
+Phase 0 stores two records. Neither is a credential and neither leaves the browser:
+
+```js
+// kd-space-identity-v1
+{ id: 'uuid', name: 'KD-AB12', color: '#00e5ff', guest: true, createdAt: '…' }
+
+// kd-space-space-v1
+{ id: 'uuid', ownerId: '<identity.id>', name: 'My KD Space', createdAt: '…' }
+```
+
+`window.experience.social` exposes `getIdentity()`, `getSpace()`,
+`setDisplayName()`, `setColor()`, `renameSpace()` and `claimSpace()`.
+`claimSpace()` is reserved for the moment a signed-in identity replaces the
+local guest — today it simply re-stamps the owner id.
+
+---
+
 ## Architecture
 
 ```
