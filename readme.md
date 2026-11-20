@@ -110,6 +110,12 @@ User clicks "Studio" ──► Panel slides in from left
        │    │                 Move / Rotate / Scale gizmo
        │    └── Remove ──► Deletes from scene & list
        │
+       ├── Save Layout ──► Stores object kinds, transforms and
+       │                   embedded uploaded GLBs in localStorage
+       │
+       ├── Load Layout ──► Rebuilds the saved arrangement
+       │                   (layouts also auto-restore on page reload)
+       │
        └── OrbitControls ──► Free camera navigation
 ```
 

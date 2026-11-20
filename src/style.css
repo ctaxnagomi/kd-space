@@ -316,6 +316,17 @@ body
     color: #ff453a;
 }
 
+.studio-status
+{
+    min-height: 16px;
+    margin-top: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.45);
+}
+.studio-status.success { color: #66d9a0; }
+.studio-status.error { color: #ff6b6b; }
+
 .studio-primitive-btns,
 .studio-transform-btns
 {

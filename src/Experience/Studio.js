@@ -21,12 +21,19 @@ export default class Studio
         this.objects = []
         this.selectedIndex = -1
 
+        // Layout persistence (browser-side; no backend required)
+        this.storageKey = 'kd-space-studio-layout-v1'
+        this.hasRestoredInitialLayout = false
+
         this.gltfLoader = new GLTFLoader()
 
         this.setOrbitControls()
         this.setTransformControls()
         this.setEnvironment()
         this.setUI()
+
+        // Restore a saved layout once all GLB resources are available.
+        this.resources.on('end', () => this.restoreInitialLayout())
     }
 
     setOrbitControls()
@@ -79,7 +86,12 @@ export default class Studio
         this.transformBtns = document.querySelectorAll('.studio-transform-btn')
         this.modeBtn = document.querySelector('.studio-mode-btn')
         this.closeBtn = document.querySelector('.studio-panel-close')
+        this.saveBtn = document.querySelector('.studio-save-btn')
+        this.loadBtn = document.querySelector('.studio-load-btn')
+        this.statusEl = document.querySelector('.studio-status')
 
+        this.saveBtn.addEventListener('click', () => this.saveLayout())
+        this.loadBtn.addEventListener('click', () => this.loadLayout())
         this.modeBtn.addEventListener('click', () => this.toggle())
         this.closeBtn.addEventListener('click', () => this.toggle())
         this.uploadBtn.addEventListener('click', () => this.fileInput.click())
@@ -120,6 +132,9 @@ export default class Studio
         {
             this.orbitControls.target.copy(this.navigation.view.target.smoothed)
             this.orbitControls.update()
+
+            if(this.objects.length > 0 && this.selectedIndex < 0)
+                this.selectObject(0)
         }
         else
         {
@@ -137,44 +152,86 @@ export default class Studio
         this.gltfLoader.load(url, (gltf) =>
         {
             const model = gltf.scene
+            this.normalizeModel(model)
 
-            const box = new THREE.Box3().setFromObject(model)
-            const size = box.getSize(new THREE.Vector3())
-            const maxDim = Math.max(size.x, size.y, size.z)
-
-            if(maxDim > 0)
+            // Keep the raw file so uploaded models survive a Save/Load cycle.
+            const reader = new FileReader()
+            reader.onload = () =>
             {
-                const targetSize = 2
-                const scale = targetSize / maxDim
-                model.scale.setScalar(scale)
+                const group = this.wrapModel(model, {
+                    kind: 'upload',
+                    name: file.name,
+                    dataUrl: reader.result
+                })
+                group.name = file.name
+                this.addObject(group)
             }
+            reader.onerror = () =>
+            {
+                const group = this.wrapModel(model, { kind: 'upload', name: file.name })
+                group.name = file.name
+                this.addObject(group)
+            }
+            reader.readAsDataURL(file)
 
-            const center = box.getCenter(new THREE.Vector3())
-            model.position.set(-center.x * model.scale.x, -center.y * model.scale.y, -center.z * model.scale.z)
-
-            this.addObject(model)
             URL.revokeObjectURL(url)
         }, undefined, (error) =>
         {
             console.error('Failed to load model:', error)
             URL.revokeObjectURL(url)
+            this.setStatus('Could not read that model file.', 'error')
         })
         event.target.value = ''
     }
 
+    normalizeModel(_model)
+    {
+        const box = new THREE.Box3().setFromObject(_model)
+        const size = box.getSize(new THREE.Vector3())
+        const maxDim = Math.max(size.x, size.y, size.z)
+
+        if(maxDim > 0)
+            _model.scale.setScalar(2 / maxDim)
+
+        const center = box.getCenter(new THREE.Vector3())
+        _model.position.set(
+            -center.x * _model.scale.x,
+            -center.y * _model.scale.y,
+            -center.z * _model.scale.z
+        )
+    }
+
+    wrapModel(_model, _source)
+    {
+        // The wrapper owns the user-facing transform; the inner model keeps
+        // its auto-scale / auto-center offset so Save/Load doesn't double it.
+        const group = new THREE.Group()
+        group.add(_model)
+        group.userData.kdSource = _source
+        return group
+    }
+
+    createPrimitiveGeometry(_type)
+    {
+        switch(_type)
+        {
+            case 'box': return new THREE.BoxGeometry(1, 1, 1)
+            case 'sphere': return new THREE.SphereGeometry(0.5, 32, 32)
+            case 'cylinder': return new THREE.CylinderGeometry(0.5, 0.5, 1, 32)
+            case 'plane': return new THREE.PlaneGeometry(1, 1)
+            default: return null
+        }
+    }
+
     addPrimitive(type)
     {
-        let geometry
-        switch(type)
-        {
-            case 'box': geometry = new THREE.BoxGeometry(1, 1, 1); break
-            case 'sphere': geometry = new THREE.SphereGeometry(0.5, 32, 32); break
-            case 'cylinder': geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32); break
-            case 'plane': geometry = new THREE.PlaneGeometry(1, 1); break
-        }
+        const geometry = this.createPrimitiveGeometry(type)
+        if(!geometry) return
+
         const material = new THREE.MeshStandardMaterial({ color: 0x4488ff, roughness: 0.5, metalness: 0.5 })
         const mesh = new THREE.Mesh(geometry, material)
         mesh.position.set(0, 0.5, 0)
+        mesh.userData.kdSource = { kind: 'primitive', shape: type }
         this.addObject(mesh)
     }
 
@@ -185,8 +242,15 @@ export default class Studio
         // Clone the loaded GLB so every placed plant is an independent object.
         const model = this.resources.items.deskPlantModel.scene.clone(true)
         model.name = 'Desk Plant'
+        model.userData.kdSource = { kind: 'plant' }
+        this.prepareModelMaterials(model)
 
-        model.traverse((_child) =>
+        this.addObject(model)
+    }
+
+    prepareModelMaterials(_object)
+    {
+        _object.traverse((_child) =>
         {
             if(!_child.isMesh) return
             const materials = Array.isArray(_child.material) ? _child.material : [_child.material]
@@ -196,8 +260,6 @@ export default class Studio
                     _material.side = THREE.DoubleSide
             }
         })
-
-        this.addObject(model)
     }
 
     addObject(object)
@@ -257,6 +319,190 @@ export default class Studio
             item.addEventListener('click', () => this.selectObject(index))
             this.objectList.appendChild(item)
         })
+    }
+
+    setStatus(_message, _type = '')
+    {
+        if(!this.statusEl) return
+        this.statusEl.textContent = _message
+        this.statusEl.className = 'studio-status' + (_type ? ' ' + _type : '')
+    }
+
+    saveLayout()
+    {
+        if(this.objects.length === 0)
+        {
+            this.setStatus('Nothing to save — add objects first.', 'error')
+            return
+        }
+
+        const layout = {
+            version: 1,
+            objects: this.objects.map((_object) =>
+            {
+                const source = _object.userData.kdSource || { kind: 'unknown' }
+                return {
+                    name: _object.name,
+                    source: source,
+                    position: _object.position.toArray(),
+                    rotation: [_object.rotation.x, _object.rotation.y, _object.rotation.z],
+                    scale: _object.scale.toArray()
+                }
+            })
+        }
+
+        try
+        {
+            localStorage.setItem(this.storageKey, JSON.stringify(layout))
+            this.setStatus(`Saved ${this.objects.length} object(s).`, 'success')
+        }
+        catch(_error)
+        {
+            console.error('KD Space: could not save layout', _error)
+            this.setStatus('Save failed — browser storage may be full.', 'error')
+        }
+    }
+
+    restoreInitialLayout()
+    {
+        if(this.hasRestoredInitialLayout) return
+        this.hasRestoredInitialLayout = true
+
+        // Never wipe objects the user may have already placed this session.
+        if(this.objects.length > 0) return
+
+        try
+        {
+            if(localStorage.getItem(this.storageKey))
+                this.loadLayout()
+        }
+        catch(_error)
+        {
+            console.error('KD Space: could not read saved layout', _error)
+        }
+    }
+
+    async loadLayout()
+    {
+        let json = null
+        try
+        {
+            json = localStorage.getItem(this.storageKey)
+        }
+        catch(_error)
+        {
+            this.setStatus('Browser storage is unavailable.', 'error')
+            return
+        }
+
+        if(!json)
+        {
+            this.setStatus('No saved layout found.', 'error')
+            return
+        }
+
+        let layout
+        try
+        {
+            layout = JSON.parse(json)
+        }
+        catch(_error)
+        {
+            this.setStatus('Saved layout could not be read.', 'error')
+            return
+        }
+
+        if(!layout || !Array.isArray(layout.objects))
+        {
+            this.setStatus('Saved layout is invalid.', 'error')
+            return
+        }
+
+        this.clearObjects()
+
+        let restored = 0
+        for(const entry of layout.objects)
+        {
+            const object = await this.restoreObject(entry)
+            if(!object) continue
+
+            this.scene.add(object)
+            this.objects.push(object)
+
+            if(Array.isArray(entry.position)) object.position.fromArray(entry.position)
+            if(Array.isArray(entry.rotation)) object.rotation.set(entry.rotation[0], entry.rotation[1], entry.rotation[2])
+            if(Array.isArray(entry.scale)) object.scale.fromArray(entry.scale)
+
+            restored++
+        }
+
+        if(this.active && this.objects.length > 0)
+            this.selectObject(0)
+        else
+            this.updateObjectList()
+
+        this.setStatus(`Loaded ${restored} object(s).`, 'success')
+    }
+
+    clearObjects()
+    {
+        this.transformControls.detach()
+        this.scene.remove(this.transformControls)
+
+        for(const object of this.objects)
+            this.scene.remove(object)
+
+        this.objects = []
+        this.selectedIndex = -1
+    }
+
+    async restoreObject(_entry)
+    {
+        if(!_entry || !_entry.source) return null
+
+        const source = _entry.source
+
+        if(source.kind === 'primitive')
+        {
+            const geometry = this.createPrimitiveGeometry(source.shape)
+            if(!geometry) return null
+
+            const material = new THREE.MeshStandardMaterial({ color: 0x4488ff, roughness: 0.5, metalness: 0.5 })
+            const mesh = new THREE.Mesh(geometry, material)
+            mesh.userData.kdSource = { kind: 'primitive', shape: source.shape }
+            if(_entry.name) mesh.name = _entry.name
+            return mesh
+        }
+
+        if(source.kind === 'plant')
+        {
+            if(!this.resources.items.deskPlantModel) return null
+
+            const model = this.resources.items.deskPlantModel.scene.clone(true)
+            model.userData.kdSource = { kind: 'plant' }
+            this.prepareModelMaterials(model)
+            if(_entry.name) model.name = _entry.name
+            return model
+        }
+
+        if(source.kind === 'upload' && source.dataUrl)
+        {
+            return new Promise((_resolve) =>
+            {
+                this.gltfLoader.load(source.dataUrl, (gltf) =>
+                {
+                    const model = gltf.scene
+                    this.normalizeModel(model)
+
+                    const group = this.wrapModel(model, source)
+                    group.name = _entry.name || source.name || 'Model'
+                    this.prepareModelMaterials(group)
+                    _resolve(group)
+                }, undefined, () => _resolve(null))
+            })
+        }
+
+        return null
     }
 
     update()
