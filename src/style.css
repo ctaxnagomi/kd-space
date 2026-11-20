@@ -316,6 +316,8 @@ body
     color: #ff453a;
 }
 
+.studio-share-btn { grid-column: 1 / -1; }
+
 .studio-status
 {
     min-height: 16px;

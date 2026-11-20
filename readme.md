@@ -109,8 +109,10 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Add Prop ──► Desk Plant / Desk Lamp (Blender-made GLBs)
        │                 Placed at origin; editable with transform gizmos
        │
-       ├── Select Object ──► TransformControls attach
-       │    │                 Move / Rotate / Scale gizmo
+       ├── Objects ──► Starts with every scene object (room, props;
+       │               lights excluded) as the default catalog
+       │    ├── Select ──► TransformControls attach
+       │    │               Move / Rotate / Scale gizmo
        │    └── Remove ──► Deletes from scene & list
        │
        ├── Save Layout ──► Stores object kinds, transforms and
@@ -119,8 +121,19 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Load Layout ──► Rebuilds the saved arrangement
        │                   (layouts also auto-restore on page reload)
        │
+       ├── Copy Share Link ──► Encodes the arrangement in the URL hash
+       │                       (built-in props + primitives only)
+       │
        └── OrbitControls ──► Free camera navigation
 ```
+
+### Shareable spaces
+
+**Copy Share Link** encodes the current Studio arrangement into the URL hash
+(`#space=...`). Opening that link rebuilds the same scene in another browser —
+no backend or account needed. A shared link takes priority over the local saved
+layout. Uploaded GLBs are excluded from links because embedding their file data
+would make URLs unusable; the status line tells you how many were skipped.
 
 ---
 

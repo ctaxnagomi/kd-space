@@ -25,6 +25,10 @@ export default class Studio
         this.storageKey = 'kd-space-studio-layout-v1'
         this.hasRestoredInitialLayout = false
 
+        // Default catalog: the objects already in the scene at startup.
+        this.stockCatalog = new Map()
+        this.hasCollectedStock = false
+
         this.gltfLoader = new GLTFLoader()
 
         this.setOrbitControls()
@@ -32,8 +36,12 @@ export default class Studio
         this.setEnvironment()
         this.setUI()
 
-        // Restore a saved layout once all GLB resources are available.
-        this.resources.on('end', () => this.restoreInitialLayout())
+        // Populate the catalog and restore a saved layout once all GLBs are ready.
+        this.resources.on('end', () =>
+        {
+            this.collectStockObjects()
+            this.restoreInitialLayout()
+        })
     }
 
     setOrbitControls()
@@ -88,10 +96,12 @@ export default class Studio
         this.closeBtn = document.querySelector('.studio-panel-close')
         this.saveBtn = document.querySelector('.studio-save-btn')
         this.loadBtn = document.querySelector('.studio-load-btn')
+        this.shareBtn = document.querySelector('.studio-share-btn')
         this.statusEl = document.querySelector('.studio-status')
 
         this.saveBtn.addEventListener('click', () => this.saveLayout())
         this.loadBtn.addEventListener('click', () => this.loadLayout())
+        this.shareBtn.addEventListener('click', () => this.copyShareLink())
         this.modeBtn.addEventListener('click', () => this.toggle())
         this.closeBtn.addEventListener('click', () => this.toggle())
         this.uploadBtn.addEventListener('click', () => this.fileInput.click())
@@ -115,6 +125,38 @@ export default class Studio
         document.querySelector('.studio-add-plane').addEventListener('click', () => this.addPrimitive('plane'))
         document.querySelector('.studio-add-plant').addEventListener('click', () => this.addPlant())
         document.querySelector('.studio-add-lamp').addEventListener('click', () => this.addLamp())
+    }
+
+    collectStockObjects()
+    {
+        if(this.hasCollectedStock) return
+        this.hasCollectedStock = true
+
+        // Everything World adds is a catalog item; Studio's own helpers are not.
+        const studioHelpers = new Set([
+            this.camera.instance,
+            this.gridHelper,
+            this.ambientLight,
+            this.directionalLight,
+            this.hemisphereLight,
+            this.transformControls
+        ])
+
+        let index = 0
+        for(const object of [ ...this.scene.children ])
+        {
+            if(studioHelpers.has(object) || object.isLight || object.isCamera) continue
+
+            index++
+            const id = `stock-${index}`
+            object.userData.kdSource = { kind: 'stock', id }
+            if(!object.name) object.name = `Scene Object ${index}`
+
+            this.stockCatalog.set(id, object)
+            this.objects.push(object)
+        }
+
+        this.updateObjectList()
     }
 
     toggle()
@@ -341,6 +383,21 @@ export default class Studio
         this.statusEl.className = 'studio-status' + (_type ? ' ' + _type : '')
     }
 
+    serializeObjects(_objects)
+    {
+        return _objects.map((_object) =>
+        {
+            const source = _object.userData.kdSource || { kind: 'unknown' }
+            return {
+                name: _object.name,
+                source: source,
+                position: _object.position.toArray(),
+                rotation: [_object.rotation.x, _object.rotation.y, _object.rotation.z],
+                scale: _object.scale.toArray()
+            }
+        })
+    }
+
     saveLayout()
     {
         if(this.objects.length === 0)
@@ -351,22 +408,17 @@ export default class Studio
 
         const layout = {
             version: 1,
-            objects: this.objects.map((_object) =>
-            {
-                const source = _object.userData.kdSource || { kind: 'unknown' }
-                return {
-                    name: _object.name,
-                    source: source,
-                    position: _object.position.toArray(),
-                    rotation: [_object.rotation.x, _object.rotation.y, _object.rotation.z],
-                    scale: _object.scale.toArray()
-                }
-            })
+            objects: this.serializeObjects(this.objects)
         }
 
         try
         {
             localStorage.setItem(this.storageKey, JSON.stringify(layout))
+
+            // A previously copied share link would otherwise override this save.
+            if(window.location.hash)
+                window.history.replaceState(null, '', window.location.pathname + window.location.search)
+
             this.setStatus(`Saved ${this.objects.length} object(s).`, 'success')
         }
         catch(_error)
@@ -376,13 +428,127 @@ export default class Studio
         }
     }
 
+    encodeLayout(_layout)
+    {
+        // Compact keys keep the URL short. Uploaded GLBs are deliberately
+        // excluded by copyShareLink() — their data URLs make URLs unusable.
+        const compact = {
+            v: 1,
+            o: _layout.objects.map((_object) => ({
+                n: _object.name || '',
+                t: _object.source.kind,
+                s: _object.source.shape || '',
+                i: _object.source.id || '',
+                p: _object.position,
+                r: _object.rotation,
+                c: _object.scale
+            }))
+        }
+
+        const json = JSON.stringify(compact)
+        return btoa(unescape(encodeURIComponent(json)))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '')
+    }
+
+    decodeLayout(_value)
+    {
+        try
+        {
+            const padded = _value.replace(/-/g, '+').replace(/_/g, '/')
+            const json = decodeURIComponent(escape(atob(padded)))
+            const compact = JSON.parse(json)
+            if(!compact || !Array.isArray(compact.o)) return null
+
+            return {
+                version: 1,
+                objects: compact.o.map((_object) => ({
+                    name: _object.n,
+                    source: _object.t === 'primitive'
+                        ? { kind: 'primitive', shape: _object.s }
+                        : _object.t === 'stock'
+                            ? { kind: 'stock', id: _object.i }
+                            : { kind: _object.t },
+                    position: _object.p,
+                    rotation: _object.r,
+                    scale: _object.c
+                }))
+            }
+        }
+        catch(_error)
+        {
+            return null
+        }
+    }
+
+    readSharedLayout()
+    {
+        const match = window.location.hash.match(/space=([^&]+)/)
+        if(!match) return null
+        return this.decodeLayout(decodeURIComponent(match[1]))
+    }
+
+    async copyShareLink()
+    {
+        if(this.objects.length === 0)
+        {
+            this.setStatus('Nothing to share — add objects first.', 'error')
+            return
+        }
+
+        const shareable = this.objects.filter((_object) =>
+            _object.userData.kdSource?.kind !== 'upload'
+        )
+        const excluded = this.objects.length - shareable.length
+
+        if(shareable.length === 0)
+        {
+            this.setStatus('Uploaded models cannot be shared by link.', 'error')
+            return
+        }
+
+        const encoded = this.encodeLayout({ objects: this.serializeObjects(shareable) })
+        const url = `${window.location.origin}${window.location.pathname}#space=${encoded}`
+        window.history.replaceState(null, '', url)
+
+        let copied = false
+        try
+        {
+            await navigator.clipboard.writeText(url)
+            copied = true
+        }
+        catch(_error)
+        {
+            // The hash is still set, so the URL bar is a usable fallback.
+        }
+
+        const note = excluded > 0 ? ` (${excluded} uploaded model(s) excluded)` : ''
+        this.setStatus(
+            copied ? `Share link copied${note}.` : `Link is in the address bar${note}.`,
+            'success'
+        )
+    }
+
     restoreInitialLayout()
     {
         if(this.hasRestoredInitialLayout) return
         this.hasRestoredInitialLayout = true
 
         // Never wipe objects the user may have already placed this session.
-        if(this.objects.length > 0) return
+        // Stock catalog items don't count — they are recreated every load.
+        const hasUserObjects = this.objects.some((_object) =>
+            _object.userData.kdSource?.kind !== 'stock'
+        )
+        if(hasUserObjects) return
+
+        // A shared link takes priority over the browser's saved layout.
+        const shared = this.readSharedLayout()
+        if(shared)
+        {
+            this.loadLayout(shared)
+            return
+        }
 
         try
         {
@@ -395,34 +561,38 @@ export default class Studio
         }
     }
 
-    async loadLayout()
+    async loadLayout(_layout = null)
     {
-        let json = null
-        try
-        {
-            json = localStorage.getItem(this.storageKey)
-        }
-        catch(_error)
-        {
-            this.setStatus('Browser storage is unavailable.', 'error')
-            return
-        }
+        let layout = _layout
 
-        if(!json)
+        if(!layout)
         {
-            this.setStatus('No saved layout found.', 'error')
-            return
-        }
+            let json = null
+            try
+            {
+                json = localStorage.getItem(this.storageKey)
+            }
+            catch(_error)
+            {
+                this.setStatus('Browser storage is unavailable.', 'error')
+                return
+            }
 
-        let layout
-        try
-        {
-            layout = JSON.parse(json)
-        }
-        catch(_error)
-        {
-            this.setStatus('Saved layout could not be read.', 'error')
-            return
+            if(!json)
+            {
+                this.setStatus('No saved layout found.', 'error')
+                return
+            }
+
+            try
+            {
+                layout = JSON.parse(json)
+            }
+            catch(_error)
+            {
+                this.setStatus('Saved layout could not be read.', 'error')
+                return
+            }
         }
 
         if(!layout || !Array.isArray(layout.objects))
@@ -474,6 +644,12 @@ export default class Studio
         if(!_entry || !_entry.source) return null
 
         const source = _entry.source
+
+        if(source.kind === 'stock')
+        {
+            // Original scene objects are cached before any are removed.
+            return this.stockCatalog.get(source.id) || null
+        }
 
         if(source.kind === 'primitive')
         {
