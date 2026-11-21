@@ -14,6 +14,7 @@ import Studio from './Studio.js'
 import Social from './Social.js'
 import MediaPanel from './MediaPanel.js'
 import Interactive from './Interactive.js'
+import ProfileChip from './ProfileChip.js'
 
 import assets from './assets.js'
 
@@ -52,6 +53,7 @@ export default class Experience
         this.setNavigation()
         this.setStudio()
         this.setMedia()
+        this.setProfileChip()
         
         this.sizes.on('resize', () =>
         {
@@ -157,6 +159,11 @@ export default class Experience
     {
         this.mediaPanel = new MediaPanel()
         this.interactive = new Interactive()
+    }
+
+    setProfileChip()
+    {
+        this.profileChip = new ProfileChip()
     }
 
     update()

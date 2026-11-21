@@ -608,3 +608,135 @@ body
     .media-panel { width: calc(100% - 24px); right: calc(-100% - 24px); }
     .media-panel.visible { right: 12px; }
 }
+
+/* ---- Profile chip ---- */
+.profile-chip
+{
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.profile-chip-btn
+{
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 14px;
+    background: rgba(30, 30, 32, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+}
+.profile-chip-btn:hover
+{
+    background: rgba(50, 50, 52, 0.85);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.profile-chip-dot
+{
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #00e5ff;
+    flex-shrink: 0;
+}
+.profile-chip-name { color: #fff; font-weight: 600; }
+
+.profile-popover
+{
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 0;
+    width: 250px;
+    padding: 16px;
+    background: rgba(24, 24, 26, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition: opacity 0.2s, visibility 0.2s, transform 0.2s;
+}
+.profile-popover.visible
+{
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+.profile-popover-title
+{
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.profile-name-input
+{
+    width: 100%;
+    padding: 9px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+}
+.profile-name-input:focus { border-color: rgba(0, 229, 255, 0.6); }
+.profile-color-swatches
+{
+    display: flex;
+    gap: 8px;
+    margin: 14px 0;
+}
+.profile-swatch
+{
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.profile-swatch:hover { transform: scale(1.15); }
+.profile-swatch.selected
+{
+    border-color: #fff;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+.profile-space-line
+{
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+.profile-space-name
+{
+    color: rgba(255, 255, 255, 0.75);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px)
+{
+    .profile-chip { bottom: 12px; left: 12px; }
+}

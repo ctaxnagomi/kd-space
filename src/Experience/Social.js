@@ -5,7 +5,7 @@
 const IDENTITY_KEY = 'kd-space-identity-v1'
 const SPACE_KEY = 'kd-space-space-v1'
 
-const COLORS = [
+export const IDENTITY_COLORS = [
     '#00e5ff',
     '#66d9a0',
     '#ffd166',
@@ -71,7 +71,7 @@ export default class Social
             identity = {
                 id,
                 name: `KD-${id.slice(0, 4).toUpperCase()}`,
-                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                color: IDENTITY_COLORS[Math.floor(Math.random() * IDENTITY_COLORS.length)],
                 guest: true,
                 createdAt: new Date().toISOString()
             }
