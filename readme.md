@@ -9,8 +9,17 @@
 
 A creative 3D room/space exploration built with **Three.js** — featuring a **Studio Mode** for uploading, editing, and composing 3D objects in real time.
 
-> **Live:** [kd-space.pages.dev](https://kd-space.pages.dev)  
+> **Live:** [kd-space-v2.pages.dev](https://kd-space-v2.pages.dev)  
 > **Source:** [github.com/ctaxnagomi/kd-space](https://github.com/ctaxnagomi/kd-space)
+
+The older [kd-space.pages.dev](https://kd-space.pages.dev) still exists but is
+hosted in a different Cloudflare account and serves a stale build. The current
+build is deployed to **kd-space-v2.pages.dev** in the
+`Wan.mohd.azizi.seggaf@gmail.com` account. Deployment is a manual direct upload
+of `dist/` (the Cloudflare Pages GitHub app is not installed on this repo, so
+there is no automatic Git build yet). To refresh it: `npm run build`, zip the
+**contents** of `dist/` with forward-slash paths, then upload the zip as a new
+production deployment in the Cloudflare Pages project.
 
 ---
 
