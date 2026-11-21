@@ -701,7 +701,7 @@ body
     position: absolute;
     bottom: calc(100% + 10px);
     left: 0;
-    width: 250px;
+    width: 270px;
     padding: 16px;
     background: rgba(24, 24, 26, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -763,22 +763,87 @@ body
     border-color: #fff;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
 }
+.profile-space-section
+{
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
 .profile-space-line
 {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 8px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 10px;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.4);
 }
-.profile-space-name
+.profile-space-role
 {
-    color: rgba(255, 255, 255, 0.75);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(0, 229, 255, 0.14);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: #00e5ff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+.profile-space-role.visiting
+{
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.6);
+}
+.profile-space-id
+{
+    font-family: monospace;
+    font-size: 10px;
+    opacity: 0.7;
+}
+.profile-space-name-input
+{
+    width: 100%;
+    padding: 9px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+}
+.profile-space-name-input:focus { border-color: rgba(0, 229, 255, 0.6); }
+.profile-space-name-input:disabled
+{
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.profile-copy-space-btn
+{
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    border-radius: 8px;
+    color: #00e5ff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.profile-copy-space-btn:hover { background: rgba(0, 229, 255, 0.2); }
+.profile-space-status
+{
+    min-height: 12px;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    text-align: center;
 }
 
 @media (max-width: 480px)

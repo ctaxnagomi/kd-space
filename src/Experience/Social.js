@@ -4,6 +4,7 @@
 
 const IDENTITY_KEY = 'kd-space-identity-v1'
 const SPACE_KEY = 'kd-space-space-v1'
+const SPACE_PARAM = 'space'
 
 export const IDENTITY_COLORS = [
     '#00e5ff',
@@ -22,7 +23,10 @@ export default class Social
         this.spaceKey = SPACE_KEY
 
         this.identity = this.readOrCreateIdentity()
-        this.space = this.readOrCreateSpace()
+        this.spaceState = this.readSpaceState()
+        this.space = this.resolveSpace()
+
+        this.syncUrl()
     }
 
     createId()
@@ -31,6 +35,19 @@ export default class Social
             return window.crypto.randomUUID()
 
         return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+    }
+
+    createShortId()
+    {
+        const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789'
+        const bytes = new Uint8Array(8)
+
+        if(window.crypto && typeof window.crypto.getRandomValues === 'function')
+            window.crypto.getRandomValues(bytes)
+        else
+            for(let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256)
+
+        return Array.from(bytes, (_byte) => alphabet[_byte % alphabet.length]).join('')
     }
 
     readJson(_key)
@@ -81,22 +98,83 @@ export default class Social
         return identity
     }
 
-    readOrCreateSpace()
+    readSpaceState()
     {
-        let space = this.readJson(this.spaceKey)
+        const stored = this.readJson(this.spaceKey)
+        const empty = { currentId: null, spaces: {} }
 
-        if(!space || typeof space.id !== 'string')
+        if(!stored || typeof stored !== 'object') return empty
+
+        // Migrate the phase-0/1 single-space record into the new registry.
+        if(stored.spaces && typeof stored.spaces === 'object')
         {
-            space = {
-                id: this.createId(),
-                ownerId: this.identity.id,
-                name: 'My KD Space',
-                createdAt: new Date().toISOString()
+            return {
+                currentId: typeof stored.currentId === 'string' ? stored.currentId : null,
+                spaces: stored.spaces
             }
-            this.writeJson(this.spaceKey, space)
         }
 
+        if(typeof stored.id === 'string')
+        {
+            return { currentId: stored.id, spaces: { [stored.id]: stored } }
+        }
+
+        return empty
+    }
+
+    writeSpaceState()
+    {
+        this.writeJson(this.spaceKey, this.spaceState)
+    }
+
+    readSpaceIdFromUrl()
+    {
+        const value = new URLSearchParams(window.location.search).get(SPACE_PARAM)
+        if(!value || !/^[a-z0-9]{4,12}$/i.test(value)) return null
+        return value.toLowerCase()
+    }
+
+    resolveSpace()
+    {
+        const fromUrl = this.readSpaceIdFromUrl()
+
+        if(fromUrl && this.spaceState.spaces[fromUrl])
+        {
+            this.spaceState.currentId = fromUrl
+            this.writeSpaceState()
+            return this.spaceState.spaces[fromUrl]
+        }
+
+        if(fromUrl) return this.createSpace(fromUrl)
+
+        const current = this.spaceState.spaces[this.spaceState.currentId]
+        if(current) return current
+
+        return this.createSpace()
+    }
+
+    createSpace(_id)
+    {
+        const space = {
+            id: _id || this.createShortId(),
+            ownerId: this.identity.id,
+            name: 'My KD Space',
+            createdAt: new Date().toISOString()
+        }
+        this.spaceState.spaces[space.id] = space
+        this.spaceState.currentId = space.id
+        this.writeSpaceState()
         return space
+    }
+
+    syncUrl()
+    {
+        const url = new URL(window.location.href)
+
+        if(url.searchParams.get(SPACE_PARAM) === this.space.id) return
+
+        url.searchParams.set(SPACE_PARAM, this.space.id)
+        window.history.replaceState(window.history.state, '', url.href)
     }
 
     getIdentity()
@@ -106,7 +184,28 @@ export default class Social
 
     getSpace()
     {
-        return { ...this.space }
+        return { ...this.space, isOwner: this.isOwner() }
+    }
+
+    getSpaces()
+    {
+        return Object.values(this.spaceState.spaces).map((_space) => ({
+            ..._space,
+            isOwner: _space.ownerId === this.identity.id
+        }))
+    }
+
+    isOwner()
+    {
+        return !!this.space && this.space.ownerId === this.identity.id
+    }
+
+    getSpaceLink()
+    {
+        const url = new URL(window.location.href)
+        url.searchParams.set(SPACE_PARAM, this.space.id)
+        url.hash = ''
+        return url.href
     }
 
     setDisplayName(_name)
@@ -130,19 +229,26 @@ export default class Social
 
     renameSpace(_name)
     {
+        if(!this.isOwner()) return this.getSpace()
+
         const name = String(_name || '').trim().slice(0, 32)
         if(!name) return this.getSpace()
 
         this.space.name = name
-        this.writeJson(this.spaceKey, this.space)
+        this.spaceState.spaces[this.space.id] = this.space
+        this.writeSpaceState()
         return this.getSpace()
     }
 
     claimSpace()
     {
-        // Reserved for when a signed-in identity replaces the local guest.
+        // Only an unclaimed space can be claimed; visiting someone else's
+        // local record never silently transfers ownership.
+        if(this.space.ownerId) return this.getSpace()
+
         this.space.ownerId = this.identity.id
-        this.writeJson(this.spaceKey, this.space)
+        this.spaceState.spaces[this.space.id] = this.space
+        this.writeSpaceState()
         return this.getSpace()
     }
 }

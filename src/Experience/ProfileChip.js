@@ -1,4 +1,4 @@
-// Phase 1 of the social layer: a small "You" chip with an inline editor.
+// Social layer chip: identity editor plus named-space controls.
 // Reads and writes through window.experience.social (localStorage, no network).
 
 import Experience from './Experience.js'
@@ -18,7 +18,14 @@ export default class ProfileChip
         this.popover = document.querySelector('.profile-popover')
         this.input = document.querySelector('.profile-name-input')
         this.swatches = document.querySelector('.profile-color-swatches')
-        this.spaceNameEl = document.querySelector('.profile-space-name')
+
+        this.spaceNameInput = document.querySelector('.profile-space-name-input')
+        this.spaceRoleEl = document.querySelector('.profile-space-role')
+        this.spaceIdEl = document.querySelector('.profile-space-id')
+        this.copyBtn = document.querySelector('.profile-copy-space-btn')
+        this.statusEl = document.querySelector('.profile-space-status')
+
+        this.statusTimer = null
 
         this.buildSwatches()
         this.render()
@@ -35,6 +42,14 @@ export default class ProfileChip
             if(_event.key === 'Escape') this.close()
         })
         this.input.addEventListener('change', () => this.commitName())
+
+        this.spaceNameInput.addEventListener('keydown', (_event) =>
+        {
+            if(_event.key === 'Enter') this.commitSpaceName()
+            if(_event.key === 'Escape') this.close()
+        })
+        this.spaceNameInput.addEventListener('change', () => this.commitSpaceName())
+        this.copyBtn.addEventListener('click', () => this.copySpaceLink())
 
         document.addEventListener('pointerdown', (_event) =>
         {
@@ -67,6 +82,38 @@ export default class ProfileChip
         this.render()
     }
 
+    commitSpaceName()
+    {
+        const value = this.spaceNameInput.value.trim()
+        if(value) this.social.renameSpace(value)
+        this.render()
+    }
+
+    async copySpaceLink()
+    {
+        const link = this.social.getSpaceLink()
+
+        try
+        {
+            await navigator.clipboard.writeText(link)
+            this.setStatus('Space link copied')
+        }
+        catch(_error)
+        {
+            // Clipboard access can be blocked outside a secure context.
+            this.spaceNameInput.focus()
+            this.spaceNameInput.select()
+            this.setStatus('Copy blocked — use the URL bar')
+        }
+    }
+
+    setStatus(_message)
+    {
+        this.statusEl.textContent = _message
+        window.clearTimeout(this.statusTimer)
+        this.statusTimer = window.setTimeout(() => { this.statusEl.textContent = '' }, 2500)
+    }
+
     render()
     {
         const identity = this.social.getIdentity()
@@ -76,7 +123,12 @@ export default class ProfileChip
         this.dotEl.style.background = identity.color
         this.dotEl.style.boxShadow = `0 0 8px ${identity.color}`
         this.input.value = identity.name
-        this.spaceNameEl.textContent = space.name
+
+        this.spaceNameInput.value = space.name
+        this.spaceNameInput.disabled = !space.isOwner
+        this.spaceRoleEl.textContent = space.isOwner ? 'Owner' : 'Visiting'
+        this.spaceRoleEl.classList.toggle('visiting', !space.isOwner)
+        this.spaceIdEl.textContent = space.id
 
         for(const button of this.swatches.children)
             button.classList.toggle('selected', button.dataset.color === identity.color)

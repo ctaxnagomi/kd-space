@@ -74,7 +74,7 @@ presence and messaging attach to those same ids when a signalling service exists
 |-------|---------|--------|------------|
 | 0 | Guest identity + space metadata in `localStorage` | **Done** | — |
 | 1 | Profile chip and display-name/color editing in the room | **Done** | Phase 0 |
-| 2 | Named spaces via short `?space=` id + ownership claim | Planned | Auth/sign-in decision |
+| 2 | Named spaces via short `?space=` id + ownership claim | **Done** | Phase 1 |
 | 3 | Presence — who is online in a space | Planned | Signalling service |
 | 4 | Peer messaging over a WebRTC data channel | Planned | Phase 3 + STUN/TURN |
 | 5 | Tally / KrackedDevs cross-experience handoff | Planned | Partner API |
@@ -86,18 +86,35 @@ Phase 0 stores two records. Neither is a credential and neither leaves the brows
 { id: 'uuid', name: 'KD-AB12', color: '#00e5ff', guest: true, createdAt: '…' }
 
 // kd-space-space-v1
-{ id: 'uuid', ownerId: '<identity.id>', name: 'My KD Space', createdAt: '…' }
+{
+  currentId: 'a1b2c3d4',
+  spaces: {
+    a1b2c3d4: { id: 'a1b2c3d4', ownerId: '<identity.id>',
+                name: 'My KD Space', createdAt: '…' }
+  }
+}
 ```
 
-`window.experience.social` exposes `getIdentity()`, `getSpace()`,
-`setDisplayName()`, `setColor()`, `renameSpace()` and `claimSpace()`.
-`claimSpace()` is reserved for the moment a signed-in identity replaces the
-local guest — today it simply re-stamps the owner id.
+The old single-space record is migrated into this registry on first load.
+`window.experience.social` exposes `getIdentity()`, `getSpace()`, `getSpaces()`,
+`getSpaceLink()`, `setDisplayName()`, `setColor()`, `renameSpace()` and
+`claimSpace()`. `claimSpace()` is reserved for the moment a signed-in identity
+replaces the local guest — today it simply re-stamps the owner id.
 
 **Phase 1** adds a **You** chip pinned to the bottom-left of the room. It shows
 your display name and a color dot; click it to open a popover with a name field
 and six color swatches. Changes save instantly through the Social module and
 survive a reload. The chip is driven by `src/Experience/ProfileChip.js`.
+
+**Phase 2** adds named spaces. Every space has an 8-character short id and is
+addressed by a `?space=<id>` query parameter (e.g.
+`https://kd-space-v2.pages.dev/?space=a1b2c3d4`). The URL is kept in sync as you
+browse, so the address bar is always a shareable link; **Copy Space Link** in the
+chip popover copies a clean one. Opening a link for an unknown id claims it for
+the current guest; opening a link for a space owned by a different local
+identity opens it read-only (**Visiting**) with the name field disabled.
+Renaming is owner-only and all state remains in `localStorage` — ownership is a
+local convention, not real authentication, until phase 3+ introduces a backend.
 
 ---
 
