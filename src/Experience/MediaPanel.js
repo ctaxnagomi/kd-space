@@ -18,6 +18,7 @@ export default class MediaPanel
         this.resizeHandle = document.querySelector('.media-panel-resize')
 
         this.current = null
+        this.sourceScreen = null
         this.drag = null
         this.resize = null
 
@@ -51,7 +52,7 @@ export default class MediaPanel
         }
     }
 
-    showTarget(_url, _label)
+    showTarget(_url, _label, _originalUrl = null)
     {
         const blocked = isBlockedHost(_url)
         const target = effectiveEmbedUrl(_url)
@@ -61,6 +62,9 @@ export default class MediaPanel
         this.titleEl.textContent = blocked
             ? `${hostLabel(_url)} → ${hostLabel(target)}`
             : _label
+
+        // Keep the screen the panel was opened from in sync with the panel.
+        if(this.sourceScreen) this.sourceScreen.mirrorUrl(_originalUrl || _url, target || _url)
     }
 
     open(_options = {})
@@ -72,7 +76,7 @@ export default class MediaPanel
         this.current = { url, embedUrl, label: _options.label || 'Live site' }
         this.addressEl.value = url || embedUrl
         this.element.classList.add('visible')
-        this.showTarget(embedUrl || url, this.current.label)
+        this.showTarget(embedUrl || url, this.current.label, url)
     }
 
     navigate(_value)
@@ -82,7 +86,7 @@ export default class MediaPanel
 
         this.current = { ...this.current, url, embedUrl: url, label: hostLabel(url) }
         this.addressEl.value = url
-        this.showTarget(url, this.current.label)
+        this.showTarget(url, this.current.label, url)
     }
 
     openExternally()
@@ -95,6 +99,8 @@ export default class MediaPanel
     {
         this.element.classList.remove('visible')
         this.frameEl.src = 'about:blank'
+        if(this.sourceScreen) this.sourceScreen.clearMirror()
+        this.sourceScreen = null
         this.current = null
 
         // Restore CSS positioning so the panel can slide out cleanly.

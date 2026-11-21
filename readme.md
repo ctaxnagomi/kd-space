@@ -232,7 +232,7 @@ Each screen has its own mode selector in Studio Mode:
 | Mode | What it shows |
 |------|---------------|
 | Local video | The original looping MP4 texture (default look) |
-| YouTube | A real autoplaying, muted iframe overlaid on the 3D screen, with floating play/pause and mute buttons |
+| YouTube | A real autoplaying, muted iframe overlaid on the 3D screen, with play/pause and mute buttons stacked down its right edge |
 | Live site | An embeddable site iframe overlaid on the 3D screen |
 | Off | Blank screen |
 
@@ -241,7 +241,15 @@ defaults to **YouTube**. The YouTube field accepts any watch URL, `youtu.be`
 link or raw 11-character id. Clicking a screen in YouTube or Live site mode
 opens the right-side panel (with address bar, Go, Open-externally and Close);
 drag it by the header or resize it from the bottom-right corner, then navigate
-without leaving the room. Settings persist in `kd-space-screen-settings-v1`.
+without leaving the room. The panel mirrors its current address onto the screen
+it was opened from while it is open, so navigating in the panel updates the 3D
+screen too; closing the panel restores the screen's configured mode. In
+**Live site** mode a navigation also becomes the screen's saved home URL.
+Settings persist in `kd-space-screen-settings-v1`.
+
+> Mirror tracking follows the panel's address bar and **Go** button. Browsers do
+> not expose a cross-origin iframe's URL to the parent page, so clicking a link
+> *inside* the panel iframe cannot be mirrored.
 
 > **krackeddevs.com** sends `X-Frame-Options: DENY` and
 > `frame-ancestors 'none'`, so browsers refuse to embed it. Its URL is kept in

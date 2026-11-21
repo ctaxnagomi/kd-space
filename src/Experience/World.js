@@ -91,12 +91,14 @@ export default class World
         this.pcScreen = new Screen(
             this.resources.items.pcScreenModel.scene.children[0],
             '/assets/videoPortfolio.mp4',
-            this.screenSettings.monitor
+            this.screenSettings.monitor,
+            'monitor'
         )
         this.macScreen = new Screen(
             this.resources.items.macScreenModel.scene.children[0],
             '/assets/videoStream.mp4',
-            this.screenSettings.laptop
+            this.screenSettings.laptop,
+            'laptop'
         )
         this.applyScreenSettings(this.screenSettings)
     }

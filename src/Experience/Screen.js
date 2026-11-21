@@ -89,7 +89,7 @@ function solveHomography(_destination)
 
 export default class Screen
 {
-    constructor(_mesh, _sourcePath, _settings = {})
+    constructor(_mesh, _sourcePath, _settings = {}, _key = null)
     {
         this.experience = new Experience()
         this.resources = this.experience.resources
@@ -101,6 +101,8 @@ export default class Screen
 
         this.mesh = _mesh
         this.sourcePath = _sourcePath
+        this.key = _key
+        this.mirror = { active: false, url: null }
         this.settings = {
             mode: _settings.mode || 'video',
             youtubeUrl: _settings.youtubeUrl || DEFAULT_YOUTUBE_URL,
@@ -331,8 +333,39 @@ export default class Screen
     {
         const target = this.getPanelTarget()
         if(!target || !this.experience.mediaPanel) return false
+        this.experience.mediaPanel.sourceScreen = this
         this.experience.mediaPanel.open(target)
         return true
+    }
+
+    mirrorUrl(_url, _embedUrl)
+    {
+        if(this.settings.mode === 'off') return
+
+        const target = effectiveEmbedUrl(_embedUrl || _url)
+        if(!target) return
+
+        this.mirror.active = true
+        this.mirror.url = _url
+
+        this.overlay.element.style.display = 'block'
+        if(this.overlay.iframe.src !== target) this.overlay.iframe.src = target
+
+        // YouTube controls are meaningless once the panel navigates elsewhere.
+        const isYoutube = /youtube\.com|youtube-nocookie\.com/i.test(target)
+        this.controls.style.display = (this.settings.mode === 'youtube' && isYoutube) ? 'flex' : 'none'
+
+        // A site navigation becomes the screen's new home so it survives reload.
+        if(this.key && this.settings.mode === 'site' && this.experience.world)
+            this.experience.world.updateScreenSetting(this.key, 'siteUrl', _url)
+    }
+
+    clearMirror()
+    {
+        if(!this.mirror.active) return
+        this.mirror.active = false
+        this.mirror.url = null
+        this.applyMode()
     }
 
     update()
@@ -367,13 +400,13 @@ export default class Screen
             (-_point.y * 0.5 + 0.5) * height
         ])
 
-        // Position the fixed-size controls at the bottom edge of the screen.
+        // Stack the fixed-size controls down the right edge of the screen.
         if(this.settings.mode === 'youtube')
         {
-            const x = (destination[2][0] + destination[3][0]) / 2
-            const y = (destination[2][1] + destination[3][1]) / 2
+            const x = (destination[1][0] + destination[2][0]) / 2
+            const y = (destination[1][1] + destination[2][1]) / 2
             this.controls.style.left = `${x}px`
-            this.controls.style.top = `${y - 20}px`
+            this.controls.style.top = `${y}px`
             this.controls.style.visibility = 'visible'
         }
 
