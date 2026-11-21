@@ -10,6 +10,7 @@ import BouncingLogo from './BouncingLogo.js'
 import Screen from './Screen.js'
 import DeskPlant from './DeskPlant.js'
 import DeskLamp from './DeskLamp.js'
+import WallPortrait from './WallPortrait.js'
 import { DEFAULT_YOUTUBE_URL, DEFAULT_SITE_URL } from './Screen.js'
 
 export default class World
@@ -37,6 +38,7 @@ export default class World
                 this.setScreens()
                 this.setDeskPlant()
                 this.setDeskLamp()
+                this.setWallPortrait()
             }
         })
     }
@@ -84,6 +86,11 @@ export default class World
     setDeskLamp()
     {
         this.deskLamp = new DeskLamp()
+    }
+
+    setWallPortrait()
+    {
+        this.wallPortrait = new WallPortrait()
     }
 
     setScreens()

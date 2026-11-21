@@ -196,6 +196,9 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Add Prop ──► Desk Plant / Desk Lamp (Blender-made GLBs)
        │                 Placed at origin; editable with transform gizmos
        │
+       ├── Wall Portrait ──► Framed photo on the back wall behind the desk
+       │                     (static texture in /assets/portrait.jpg)
+       │
        ├── Objects ──► Starts with every scene object (room, props;
        │               lights excluded) as the default catalog
        │    ├── Select ──► TransformControls attach
@@ -280,11 +283,11 @@ would make URLs unusable; the status line tells you how many were skipped.
 
 Only changes from the default scene are stored: removed scene objects, moved or
 resized ones, and added objects. An untouched room therefore produces a link a
-few hundred bytes long instead of listing all 27 objects. Saving a layout
+few hundred bytes long instead of listing all 28 objects. Saving a layout
 clears an old share hash so it cannot override the newer saved layout.
 
 **Reset Layout** asks for confirmation, then removes the browser save and any
-share hash and rebuilds the default 27-object scene — a clean starting point
+share hash and rebuilds the default 28-object scene — a clean starting point
 after experimenting with a shared space.
 
 ---

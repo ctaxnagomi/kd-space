@@ -28,6 +28,7 @@ export default [
             { name: 'roomModel', source: '/assets/roomModel.glb' },
             { name: 'deskPlantModel', source: '/assets/deskPlant.glb' },
             { name: 'deskLampModel', source: '/assets/deskLamp.glb' },
+            { name: 'portraitTexture', source: '/assets/portrait.jpg', type: 'texture' },
         ]
     }
 ]
