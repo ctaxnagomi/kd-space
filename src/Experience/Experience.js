@@ -12,6 +12,8 @@ import World from './World.js'
 import Navigation from './Navigation.js'
 import Studio from './Studio.js'
 import Social from './Social.js'
+import MediaPanel from './MediaPanel.js'
+import Interactive from './Interactive.js'
 
 import assets from './assets.js'
 
@@ -49,6 +51,7 @@ export default class Experience
         this.setWorld()
         this.setNavigation()
         this.setStudio()
+        this.setMedia()
         
         this.sizes.on('resize', () =>
         {
@@ -150,6 +153,12 @@ export default class Experience
         this.social = new Social()
     }
 
+    setMedia()
+    {
+        this.mediaPanel = new MediaPanel()
+        this.interactive = new Interactive()
+    }
+
     update()
     {
         if(this.stats)
@@ -168,6 +177,9 @@ export default class Experience
 
         if(this.studio)
             this.studio.update()
+
+        if(this.interactive)
+            this.interactive.update()
 
         window.requestAnimationFrame(() =>
         {

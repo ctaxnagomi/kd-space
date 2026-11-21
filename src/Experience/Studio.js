@@ -128,6 +128,55 @@ export default class Studio
         document.querySelector('.studio-add-plane').addEventListener('click', () => this.addPrimitive('plane'))
         document.querySelector('.studio-add-plant').addEventListener('click', () => this.addPlant())
         document.querySelector('.studio-add-lamp').addEventListener('click', () => this.addLamp())
+
+        this.setScreenUI()
+    }
+
+    setScreenUI()
+    {
+        this.screenConfigs = document.querySelectorAll('.studio-screen-config')
+
+        this.screenConfigs.forEach((config) =>
+        {
+            const key = config.dataset.screen
+            const mode = config.querySelector('.studio-screen-mode')
+            const youtube = config.querySelector('.studio-screen-youtube')
+            const site = config.querySelector('.studio-screen-site')
+
+            mode.addEventListener('change', () =>
+            {
+                this.experience.world.updateScreenSetting(key, 'mode', mode.value)
+                this.syncScreenFields()
+            })
+            youtube.addEventListener('change', () =>
+                this.experience.world.updateScreenSetting(key, 'youtubeUrl', youtube.value))
+            site.addEventListener('change', () =>
+                this.experience.world.updateScreenSetting(key, 'siteUrl', site.value))
+        })
+
+        document.querySelector('.studio-kracked-link').addEventListener('click', () =>
+        {
+            window.open('https://krackeddevs.com', '_blank', 'noopener,noreferrer')
+        })
+
+        this.syncScreenFields()
+    }
+
+    syncScreenFields()
+    {
+        const world = this.experience.world
+        if(!world || !world.getScreenSettings) return
+        const settings = world.getScreenSettings()
+        if(!settings) return
+
+        this.screenConfigs.forEach((config) =>
+        {
+            const values = settings[config.dataset.screen]
+            if(!values) return
+            config.querySelector('.studio-screen-mode').value = values.mode
+            config.querySelector('.studio-screen-youtube').value = values.youtubeUrl
+            config.querySelector('.studio-screen-site').value = values.siteUrl
+        })
     }
 
     collectStockObjects()
@@ -181,6 +230,8 @@ export default class Studio
 
         if(this.active)
         {
+            this.syncScreenFields()
+
             this.orbitControls.target.copy(this.navigation.view.target.smoothed)
             this.orbitControls.update()
 

@@ -156,11 +156,42 @@ User clicks "Studio" ──► Panel slides in from left
        ├── Copy Share Link ──► Encodes the arrangement in the URL hash
        │                       (built-in props + primitives only)
        │
+       ├── Screens ──► Per-screen mode: Local video / YouTube / Live site / Off
+       │               YouTube URL + site URL fields, saved in localStorage
+       │               "Open KrackedDevs" launches the community site externally
+       │
        ├── Reset Layout ──► After confirmation, clears the saved layout and
        │                    share hash, then restores the default scene
        │
        └── OrbitControls ──► Free camera navigation
 ```
+
+### Live screens & interaction
+
+The **monitor** and **laptop** screens are interactive. Hovering any Studio
+object or screen adds a subtle cyan glow, a pointer cursor and a small tooltip;
+clicking a screen opens a docked, navigable panel on the right.
+
+Each screen has its own mode selector in Studio Mode:
+
+| Mode | What it shows |
+|------|---------------|
+| Local video | The original looping MP4 texture (default look) |
+| YouTube | A real autoplaying, muted iframe overlaid on the 3D screen |
+| Live site | An embeddable site iframe overlaid on the 3D screen |
+| Off | Blank screen |
+
+The monitor defaults to **Live site** (`https://example.com`) and the laptop
+defaults to **YouTube**. The YouTube field accepts any watch URL, `youtu.be`
+link or raw 11-character id. Clicking a screen in YouTube or Live site mode
+opens the right-side panel (with address bar, Go, Open-externally and Close),
+so you can navigate without leaving the room. Settings persist in
+`kd-space-screen-settings-v1`.
+
+> **krackeddevs.com** sends `X-Frame-Options: DENY` and
+> `frame-ancestors 'none'`, so browsers refuse to embed it in an iframe. The
+> **Open KrackedDevs ↗** button opens it in a new tab instead; use the Live
+> site mode with any site that permits embedding (e.g. `example.com`).
 
 ### Shareable spaces
 

@@ -82,6 +82,36 @@
                 </div>
             </div>
             <div class="studio-section">
+                <label class="studio-label">Screens</label>
+                <div class="studio-screen-config" data-screen="monitor">
+                    <div class="studio-screen-head">
+                        <span>Monitor</span>
+                        <select class="studio-screen-mode">
+                            <option value="video">Local video</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="site">Live site</option>
+                            <option value="off">Off</option>
+                        </select>
+                    </div>
+                    <input class="studio-screen-youtube" type="url" placeholder="YouTube watch URL" spellcheck="false">
+                    <input class="studio-screen-site" type="url" placeholder="https://example.com" spellcheck="false">
+                </div>
+                <div class="studio-screen-config" data-screen="laptop">
+                    <div class="studio-screen-head">
+                        <span>Laptop</span>
+                        <select class="studio-screen-mode">
+                            <option value="video">Local video</option>
+                            <option value="youtube">YouTube</option>
+                            <option value="site">Live site</option>
+                            <option value="off">Off</option>
+                        </select>
+                    </div>
+                    <input class="studio-screen-youtube" type="url" placeholder="YouTube watch URL" spellcheck="false">
+                    <input class="studio-screen-site" type="url" placeholder="https://example.com" spellcheck="false">
+                </div>
+                <button class="studio-kracked-link">Open KrackedDevs ↗</button>
+            </div>
+            <div class="studio-section">
                 <label class="studio-label">Transform</label>
                 <div class="studio-transform-btns">
                     <button class="studio-transform-btn active" data-mode="translate">Move</button>
@@ -105,6 +135,21 @@
                 <div class="studio-status"></div>
             </div>
         </div>
+    </div>
+
+    <div class="interactive-tooltip"></div>
+
+    <div class="media-panel">
+        <div class="media-panel-header">
+            <span class="media-panel-title">Live site</span>
+            <button class="media-panel-open" title="Open in a new tab">Open ↗</button>
+            <button class="media-panel-close" title="Close">&times;</button>
+        </div>
+        <div class="media-panel-bar">
+            <input class="media-panel-address" type="url" placeholder="https://" spellcheck="false">
+            <button class="media-panel-go">Go</button>
+        </div>
+        <iframe class="media-panel-frame" src="about:blank" title="KD Space live panel" allow="autoplay; fullscreen; encrypted-media" referrerpolicy="no-referrer"></iframe>
     </div>
 </body>
 </html>
