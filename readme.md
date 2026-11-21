@@ -182,21 +182,25 @@ Each screen has its own mode selector in Studio Mode:
 | Mode | What it shows |
 |------|---------------|
 | Local video | The original looping MP4 texture (default look) |
-| YouTube | A real autoplaying, muted iframe overlaid on the 3D screen |
+| YouTube | A real autoplaying, muted iframe overlaid on the 3D screen, with floating play/pause and mute buttons |
 | Live site | An embeddable site iframe overlaid on the 3D screen |
 | Off | Blank screen |
 
 The monitor defaults to **Live site** (`https://example.com`) and the laptop
 defaults to **YouTube**. The YouTube field accepts any watch URL, `youtu.be`
 link or raw 11-character id. Clicking a screen in YouTube or Live site mode
-opens the right-side panel (with address bar, Go, Open-externally and Close),
-so you can navigate without leaving the room. Settings persist in
-`kd-space-screen-settings-v1`.
+opens the right-side panel (with address bar, Go, Open-externally and Close);
+drag it by the header or resize it from the bottom-right corner, then navigate
+without leaving the room. Settings persist in `kd-space-screen-settings-v1`.
 
 > **krackeddevs.com** sends `X-Frame-Options: DENY` and
-> `frame-ancestors 'none'`, so browsers refuse to embed it in an iframe. The
-> **Open KrackedDevs ↗** button opens it in a new tab instead; use the Live
-> site mode with any site that permits embedding (e.g. `example.com`).
+> `frame-ancestors 'none'`, so browsers refuse to embed it. Its URL is kept in
+> the Studio field and the **Open KrackedDevs ↗** button still launches the
+> community site externally, but any site on the known-blocked list (GitHub,
+> X, Facebook, etc.) is automatically substituted with **https://deckergui.my**
+> inside the frame — so the screens and panel always show working content
+> instead of a blank "can't connect" error. The panel title shows the
+> substitution (e.g. `krackeddevs.com → deckergui.my`).
 
 ### Shareable spaces
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 
 import Experience from './Experience.js'
+import { effectiveEmbedUrl } from './EmbedUtils.js'
 
 export const DEFAULT_YOUTUBE_URL = 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
 export const DEFAULT_SITE_URL = 'https://example.com'
@@ -22,7 +23,8 @@ export function parseYouTube(_value)
         'controls=0',
         'modestbranding=1',
         'rel=0',
-        'playsinline=1'
+        'playsinline=1',
+        'enablejsapi=1'
     ].join('&')
 
     return {
@@ -182,8 +184,67 @@ export default class Screen
         this.overlay.element.style.width = `${this.overlay.width}px`
         this.overlay.element.style.height = `${this.overlay.height}px`
 
+        // Screen-space controls live outside the transformed overlay so they
+        // stay a usable size and can receive pointer events.
+        this.controls = document.createElement('div')
+        this.controls.className = 'screen-controls'
+        this.playBtn = document.createElement('button')
+        this.playBtn.className = 'screen-control'
+        this.playBtn.textContent = '❚❚'
+        this.playBtn.title = 'Pause'
+        this.muteBtn = document.createElement('button')
+        this.muteBtn.className = 'screen-control'
+        this.muteBtn.textContent = '🔊'
+        this.muteBtn.title = 'Unmute'
+        this.playBtn.addEventListener('click', (_event) =>
+        {
+            _event.stopPropagation()
+            this.togglePlay()
+        })
+        this.muteBtn.addEventListener('click', (_event) =>
+        {
+            _event.stopPropagation()
+            this.toggleMute()
+        })
+        this.controls.append(this.playBtn, this.muteBtn)
+        document.body.appendChild(this.controls)
+
+        this.isPlaying = true
+        this.isMuted = true
+
         this.cameraInstance = this.camera.instance
         this.projected = this.corners.map(() => new THREE.Vector3())
+    }
+
+    sendYoutubeCommand(_function)
+    {
+        try
+        {
+            this.overlay.iframe.contentWindow.postMessage(
+                JSON.stringify({ event: 'command', func: _function, args: '' }),
+                'https://www.youtube.com'
+            )
+        }
+        catch(_error)
+        {
+            // The iframe may not be ready yet; the next click will work.
+        }
+    }
+
+    togglePlay()
+    {
+        this.isPlaying = !this.isPlaying
+        this.sendYoutubeCommand(this.isPlaying ? 'playVideo' : 'pauseVideo')
+        this.playBtn.textContent = this.isPlaying ? '❚❚' : '▶'
+        this.playBtn.title = this.isPlaying ? 'Pause' : 'Play'
+    }
+
+    toggleMute()
+    {
+        this.isMuted = !this.isMuted
+        this.sendYoutubeCommand(this.isMuted ? 'mute' : 'unMute')
+        this.muteBtn.textContent = this.isMuted ? '🔊' : '🔇'
+        this.muteBtn.title = this.isMuted ? 'Unmute' : 'Mute'
     }
 
     getEmbedUrl()
@@ -199,11 +260,26 @@ export default class Screen
 
     applyMode()
     {
-        const embed = this.getEmbedUrl()
-        if(embed && this.overlay.iframe.src !== embed) this.overlay.iframe.src = embed
+        const embed = this.settings.mode === 'site'
+            ? effectiveEmbedUrl(this.getEmbedUrl())
+            : this.getEmbedUrl()
 
-        const showOverlay = !!embed
-        this.overlay.element.style.display = showOverlay ? 'block' : 'none'
+        if(embed && this.overlay.iframe.src !== embed) this.overlay.iframe.src = embed
+        if(!embed) this.overlay.iframe.src = 'about:blank'
+
+        this.overlay.element.style.display = embed ? 'block' : 'none'
+        this.controls.style.display = this.settings.mode === 'youtube' ? 'flex' : 'none'
+
+        if(this.settings.mode === 'youtube')
+        {
+            // A fresh iframe restarts autoplay muted, so reset our button state.
+            this.isPlaying = true
+            this.isMuted = true
+            this.playBtn.textContent = '❚❚'
+            this.playBtn.title = 'Pause'
+            this.muteBtn.textContent = '🔊'
+            this.muteBtn.title = 'Unmute'
+        }
 
         if(this.settings.mode === 'off')
         {
@@ -282,6 +358,7 @@ export default class Screen
         if(!visible)
         {
             this.overlay.element.style.visibility = 'hidden'
+            this.controls.style.visibility = 'hidden'
             return
         }
 
@@ -289,6 +366,16 @@ export default class Screen
             (_point.x * 0.5 + 0.5) * width,
             (-_point.y * 0.5 + 0.5) * height
         ])
+
+        // Position the fixed-size controls at the bottom edge of the screen.
+        if(this.settings.mode === 'youtube')
+        {
+            const x = (destination[2][0] + destination[3][0]) / 2
+            const y = (destination[2][1] + destination[3][1]) / 2
+            this.controls.style.left = `${x}px`
+            this.controls.style.top = `${y - 20}px`
+            this.controls.style.visibility = 'visible'
+        }
 
         const h = solveHomography(destination)
         if(!h) return

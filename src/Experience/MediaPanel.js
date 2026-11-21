@@ -1,4 +1,5 @@
 import Experience from './Experience.js'
+import { isBlockedHost, effectiveEmbedUrl, hostLabel, openExternally } from './EmbedUtils.js'
 
 export default class MediaPanel
 {
@@ -7,14 +8,18 @@ export default class MediaPanel
         this.experience = new Experience()
 
         this.element = document.querySelector('.media-panel')
+        this.headerEl = document.querySelector('.media-panel-header')
         this.titleEl = document.querySelector('.media-panel-title')
         this.addressEl = document.querySelector('.media-panel-address')
         this.frameEl = document.querySelector('.media-panel-frame')
         this.closeBtn = document.querySelector('.media-panel-close')
         this.openBtn = document.querySelector('.media-panel-open')
         this.goBtn = document.querySelector('.media-panel-go')
+        this.resizeHandle = document.querySelector('.media-panel-resize')
 
         this.current = null
+        this.drag = null
+        this.resize = null
 
         this.closeBtn.addEventListener('click', () => this.close())
         this.openBtn.addEventListener('click', () => this.openExternally())
@@ -23,6 +28,11 @@ export default class MediaPanel
         {
             if(_event.key === 'Enter') this.navigate(this.addressEl.value)
         })
+
+        this.headerEl.addEventListener('pointerdown', (_event) => this.startDrag(_event))
+        this.resizeHandle.addEventListener('pointerdown', (_event) => this.startResize(_event))
+        window.addEventListener('pointermove', (_event) => this.onPointerMove(_event))
+        window.addEventListener('pointerup', () => this.stopInteraction())
     }
 
     normalizeUrl(_value)
@@ -41,6 +51,18 @@ export default class MediaPanel
         }
     }
 
+    showTarget(_url, _label)
+    {
+        const blocked = isBlockedHost(_url)
+        const target = effectiveEmbedUrl(_url)
+
+        this.frameEl.style.display = 'block'
+        this.frameEl.src = target || 'about:blank'
+        this.titleEl.textContent = blocked
+            ? `${hostLabel(_url)} → ${hostLabel(target)}`
+            : _label
+    }
+
     open(_options = {})
     {
         const url = this.normalizeUrl(_options.url)
@@ -48,11 +70,9 @@ export default class MediaPanel
         if(!url && !embedUrl) return
 
         this.current = { url, embedUrl, label: _options.label || 'Live site' }
-        this.titleEl.textContent = this.current.label
         this.addressEl.value = url || embedUrl
-
         this.element.classList.add('visible')
-        this.frameEl.src = embedUrl || url
+        this.showTarget(embedUrl || url, this.current.label)
     }
 
     navigate(_value)
@@ -60,28 +80,15 @@ export default class MediaPanel
         const url = this.normalizeUrl(_value)
         if(!url || !this.current) return
 
-        this.current = { ...this.current, url, embedUrl: url, label: this.hostLabel(url) }
-        this.titleEl.textContent = this.current.label
+        this.current = { ...this.current, url, embedUrl: url, label: hostLabel(url) }
         this.addressEl.value = url
-        this.frameEl.src = url
-    }
-
-    hostLabel(_url)
-    {
-        try
-        {
-            return new URL(_url).hostname.replace(/^www\./, '')
-        }
-        catch(_error)
-        {
-            return 'Live site'
-        }
+        this.showTarget(url, this.current.label)
     }
 
     openExternally()
     {
         if(!this.current) return
-        window.open(this.current.url || this.current.embedUrl, '_blank', 'noopener,noreferrer')
+        openExternally(this.current.url || this.current.embedUrl)
     }
 
     close()
@@ -89,5 +96,62 @@ export default class MediaPanel
         this.element.classList.remove('visible')
         this.frameEl.src = 'about:blank'
         this.current = null
+
+        // Restore CSS positioning so the panel can slide out cleanly.
+        this.element.style.left = ''
+        this.element.style.top = ''
+        this.element.style.width = ''
+        this.element.style.height = ''
+        this.element.style.transform = ''
+        this.element.style.transition = ''
+    }
+
+    startDrag(_event)
+    {
+        if(_event.target.closest('button')) return
+        if(!this.element.classList.contains('visible')) return
+
+        const rect = this.element.getBoundingClientRect()
+        this.drag = { x: _event.clientX, y: _event.clientY, left: rect.left, top: rect.top }
+        this.element.style.transition = 'none'
+        this.element.style.transform = 'none'
+        this.element.style.left = `${rect.left}px`
+        this.element.style.top = `${rect.top}px`
+        _event.preventDefault()
+    }
+
+    startResize(_event)
+    {
+        const rect = this.element.getBoundingClientRect()
+        this.resize = { x: _event.clientX, y: _event.clientY, width: rect.width, height: rect.height }
+        this.element.style.transition = 'none'
+        _event.preventDefault()
+    }
+
+    onPointerMove(_event)
+    {
+        if(this.drag)
+        {
+            const rect = this.element.getBoundingClientRect()
+            const left = Math.min(Math.max(this.drag.left + _event.clientX - this.drag.x, 0), window.innerWidth - rect.width)
+            const top = Math.min(Math.max(this.drag.top + _event.clientY - this.drag.y, 0), window.innerHeight - rect.height)
+            this.element.style.left = `${left}px`
+            this.element.style.top = `${top}px`
+        }
+
+        if(this.resize)
+        {
+            const width = Math.min(Math.max(this.resize.width + _event.clientX - this.resize.x, 280), window.innerWidth - 40)
+            const height = Math.min(Math.max(this.resize.height + _event.clientY - this.resize.y, 240), window.innerHeight - 40)
+            this.element.style.width = `${width}px`
+            this.element.style.height = `${height}px`
+        }
+    }
+
+    stopInteraction()
+    {
+        if(this.drag || this.resize) this.element.style.transition = ''
+        this.drag = null
+        this.resize = null
     }
 }

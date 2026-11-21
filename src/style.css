@@ -521,7 +521,7 @@ body
 {
     position: fixed;
     top: 12px;
-    right: -420px;
+    left: calc(100% + 12px);
     width: 380px;
     height: calc(100% - 24px);
     z-index: 150;
@@ -534,9 +534,9 @@ body
     backdrop-filter: blur(40px) saturate(180%);
     -webkit-backdrop-filter: blur(40px) saturate(180%);
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
-    transition: right 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
-.media-panel.visible { right: 12px; }
+.media-panel.visible { transform: translateX(calc(-100% - 24px)); }
 .media-panel-header
 {
     display: flex;
@@ -544,7 +544,11 @@ body
     gap: 8px;
     padding: 10px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
 }
+.media-panel-header:active { cursor: grabbing; }
 .media-panel-title
 {
     flex: 1;
@@ -602,11 +606,52 @@ body
     border: 0;
     background: #fff;
 }
+.media-panel-resize
+{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    touch-action: none;
+    background: linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 60%, transparent 60%, transparent 75%, rgba(255, 255, 255, 0.3) 75%, rgba(255, 255, 255, 0.3) 85%, transparent 85%);
+}
+
+/* ---- Screen controls ---- */
+.screen-controls
+{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    display: flex;
+    gap: 6px;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+}
+.screen-control
+{
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 22, 0.8);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background 0.2s, transform 0.15s;
+}
+.screen-control:hover { background: rgba(0, 229, 255, 0.25); transform: scale(1.1); }
 
 @media (max-width: 480px)
 {
-    .media-panel { width: calc(100% - 24px); right: calc(-100% - 24px); }
-    .media-panel.visible { right: 12px; }
+    .media-panel { width: calc(100% - 24px); }
 }
 
 /* ---- Profile chip ---- */
