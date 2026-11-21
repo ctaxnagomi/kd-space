@@ -75,7 +75,7 @@ presence and messaging attach to those same ids when a signalling service exists
 | 0 | Guest identity + space metadata in `localStorage` | **Done** | — |
 | 1 | Profile chip and display-name/color editing in the room | **Done** | Phase 0 |
 | 2 | Named spaces via short `?space=` id + ownership claim | **Done** | Phase 1 |
-| 3 | Presence — who is online in a space | Planned | Signalling service |
+| 3 | Presence — who is online in a space (local-first) | **Done** | Phase 2 |
 | 4 | Peer messaging over a WebRTC data channel | Planned | Phase 3 + STUN/TURN |
 | 5 | Tally / KrackedDevs cross-experience handoff | Planned | Partner API |
 
@@ -114,7 +114,21 @@ chip popover copies a clean one. Opening a link for an unknown id claims it for
 the current guest; opening a link for a space owned by a different local
 identity opens it read-only (**Visiting**) with the name field disabled.
 Renaming is owner-only and all state remains in `localStorage` — ownership is a
-local convention, not real authentication, until phase 3+ introduces a backend.
+local convention, not real authentication, until a backend introduces sign-in.
+
+**Phase 3** adds presence. A `Presence` instance joins a BroadcastChannel scoped
+to the current space id, announces itself with `hello`, answers newcomers with
+`ping`, heartbeats every 4s and expires silent peers after 12s. Tabs in the same
+browser on the same space see each other; `pagehide` broadcasts `bye` for fast
+leave detection, and a `localStorage` storage-event fallback covers older
+browsers. The widget above the profile chip shows a live count, stacked color
+dots and a **In this space** list. Each tab gets its own session id, so multiple
+tabs sharing one local identity appear as separate presences.
+
+This is deliberately limited to one browser — presence is local-first and no
+data leaves the device. The transport is isolated behind `send()`/`receive()`
+and `onChange()`, so phase 4 can swap in a hosted signalling service without
+touching the UI or the peer model.
 
 ---
 

@@ -15,6 +15,8 @@ import Social from './Social.js'
 import MediaPanel from './MediaPanel.js'
 import Interactive from './Interactive.js'
 import ProfileChip from './ProfileChip.js'
+import Presence from './Presence.js'
+import PresenceUI from './PresenceUI.js'
 
 import assets from './assets.js'
 
@@ -54,7 +56,8 @@ export default class Experience
         this.setStudio()
         this.setMedia()
         this.setProfileChip()
-        
+        this.setPresence()
+
         this.sizes.on('resize', () =>
         {
             this.resize()
@@ -164,6 +167,12 @@ export default class Experience
     setProfileChip()
     {
         this.profileChip = new ProfileChip()
+    }
+
+    setPresence()
+    {
+        this.presence = new Presence(this.social)
+        this.presenceUI = new PresenceUI()
     }
 
     update()
