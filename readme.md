@@ -76,7 +76,7 @@ presence and messaging attach to those same ids when a signalling service exists
 | 1 | Profile chip and display-name/color editing in the room | **Done** | Phase 0 |
 | 2 | Named spaces via short `?space=` id + ownership claim | **Done** | Phase 1 |
 | 3 | Presence — who is online in a space (local-first) | **Done** | Phase 2 |
-| 4 | Peer messaging over a WebRTC data channel | Planned | Phase 3 + STUN/TURN |
+| 4 | Peer messaging over a WebRTC data channel (local-first) | **Done** | Phase 3 |
 | 5 | Tally / KrackedDevs cross-experience handoff | Planned | Partner API |
 
 Phase 0 stores two records. Neither is a credential and neither leaves the browser:
@@ -129,6 +129,16 @@ This is deliberately limited to one browser — presence is local-first and no
 data leaves the device. The transport is isolated behind `send()`/`receive()`
 and `onChange()`, so phase 4 can swap in a hosted signalling service without
 touching the UI or the peer model.
+
+**Phase 4** adds peer-to-peer chat. `Presence.publish()` / `onSignal()` carry
+SDP offers, answers and ICE candidates over the same space-scoped channel. The
+peer with the lexicographically smaller session id always offers, which avoids
+simultaneous-offer glare. Each pair gets a real `RTCPeerConnection` with a
+`kd-chat` data channel; no STUN/TURN is needed because same-browser tabs connect
+over host candidates. The **Chat** button top-left opens a slide-in panel with
+a live connection count and a composer. Peers are torn down as soon as presence
+reports a tab leaving. Swapping `onSignal()`/`publish()` for a hosted service is
+the only change needed to take chat cross-device.
 
 ---
 

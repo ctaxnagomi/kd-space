@@ -17,6 +17,8 @@ import Interactive from './Interactive.js'
 import ProfileChip from './ProfileChip.js'
 import Presence from './Presence.js'
 import PresenceUI from './PresenceUI.js'
+import Messaging from './Messaging.js'
+import MessagingUI from './MessagingUI.js'
 
 import assets from './assets.js'
 
@@ -57,6 +59,7 @@ export default class Experience
         this.setMedia()
         this.setProfileChip()
         this.setPresence()
+        this.setMessaging()
 
         this.sizes.on('resize', () =>
         {
@@ -173,6 +176,12 @@ export default class Experience
     {
         this.presence = new Presence(this.social)
         this.presenceUI = new PresenceUI()
+    }
+
+    setMessaging()
+    {
+        this.messaging = new Messaging(this.presence)
+        this.messagingUI = new MessagingUI()
     }
 
     update()

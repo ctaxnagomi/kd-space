@@ -17,6 +17,7 @@ export default class Presence
 
         this.peers = new Map()
         this.listeners = new Set()
+        this.signalListeners = new Set()
         this.running = false
 
         this.openTransport()
@@ -127,6 +128,10 @@ export default class Presence
         if(!_message || _message.spaceId !== this.spaceId) return
         if(!_message.sessionId || _message.sessionId === this.sessionId) return
 
+        // Hand every message to transport-agnostic listeners before the presence
+        // types are filtered below, so messaging can reuse this same channel.
+        this.emitSignal(_message)
+
         if(_message.type === 'bye')
         {
             if(this.peers.delete(_message.sessionId)) this.emit()
@@ -192,6 +197,22 @@ export default class Presence
     {
         this.listeners.add(_callback)
         return () => this.listeners.delete(_callback)
+    }
+
+    publish(_type, _payload)
+    {
+        this.transport.send({ ...this.envelope(_type), payload: _payload })
+    }
+
+    onSignal(_callback)
+    {
+        this.signalListeners.add(_callback)
+        return () => this.signalListeners.delete(_callback)
+    }
+
+    emitSignal(_message)
+    {
+        for(const callback of this.signalListeners) callback(_message)
     }
 
     emit()
