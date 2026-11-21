@@ -19,6 +19,7 @@ import Presence from './Presence.js'
 import PresenceUI from './PresenceUI.js'
 import Messaging from './Messaging.js'
 import MessagingUI from './MessagingUI.js'
+import ScrollSync from './ScrollSync.js'
 
 import assets from './assets.js'
 
@@ -57,6 +58,7 @@ export default class Experience
         this.setNavigation()
         this.setStudio()
         this.setMedia()
+        this.setScrollSync()
         this.setProfileChip()
         this.setPresence()
         this.setMessaging()
@@ -165,6 +167,11 @@ export default class Experience
     {
         this.mediaPanel = new MediaPanel()
         this.interactive = new Interactive()
+    }
+
+    setScrollSync()
+    {
+        this.scrollSync = new ScrollSync()
     }
 
     setProfileChip()

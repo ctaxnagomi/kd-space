@@ -251,6 +251,16 @@ Settings persist in `kd-space-screen-settings-v1`.
 > not expose a cross-origin iframe's URL to the parent page, so clicking a link
 > *inside* the panel iframe cannot be mirrored.
 
+**Real-time scroll mirroring:** an embedded page can opt into a small
+`postMessage` protocol so scrolling the panel scrolls the 3D screen in real
+time. `ScrollSync.js` registers both frames, sends a `kd-scroll:init` message
+with each frame's role, and relays `kd-scroll:report` positions to the other
+frame as `kd-scroll:apply`. The embed script is in
+`docs/scroll-relay.html` — paste it before `</body>` in the embedded site's
+HTML. It is already required on **deckergui.my**, which is the substituted
+site for blocked hosts. Sites without the script keep URL-only mirroring; no
+scroll data leaves the browser and nothing is stored.
+
 > **krackeddevs.com** sends `X-Frame-Options: DENY` and
 > `frame-ancestors 'none'`, so browsers refuse to embed it. Its URL is kept in
 > the Studio field and the **Open KrackedDevs ↗** button still launches the

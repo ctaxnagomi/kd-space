@@ -65,6 +65,9 @@ export default class MediaPanel
 
         // Keep the screen the panel was opened from in sync with the panel.
         if(this.sourceScreen) this.sourceScreen.mirrorUrl(_originalUrl || _url, target || _url)
+
+        if(this.experience.scrollSync && target)
+            this.experience.scrollSync.register(this.frameEl, 'panel', target)
     }
 
     open(_options = {})
@@ -99,6 +102,11 @@ export default class MediaPanel
     {
         this.element.classList.remove('visible')
         this.frameEl.src = 'about:blank'
+        if(this.experience.scrollSync)
+        {
+            this.experience.scrollSync.unregister(this.frameEl)
+            if(this.sourceScreen) this.experience.scrollSync.unregister(this.sourceScreen.overlay.iframe)
+        }
         if(this.sourceScreen) this.sourceScreen.clearMirror()
         this.sourceScreen = null
         this.current = null

@@ -262,6 +262,8 @@ export default class Screen
 
     applyMode()
     {
+        if(this.experience.scrollSync) this.experience.scrollSync.unregister(this.overlay.iframe)
+
         const embed = this.settings.mode === 'site'
             ? effectiveEmbedUrl(this.getEmbedUrl())
             : this.getEmbedUrl()
@@ -358,6 +360,11 @@ export default class Screen
         // A site navigation becomes the screen's new home so it survives reload.
         if(this.key && this.settings.mode === 'site' && this.experience.world)
             this.experience.world.updateScreenSetting(this.key, 'siteUrl', _url)
+
+        // Register last: updateScreenSetting() above can call applyMode(), which
+        // clears the previous registration.
+        if(this.experience.scrollSync)
+            this.experience.scrollSync.register(this.overlay.iframe, 'screen', target)
     }
 
     clearMirror()

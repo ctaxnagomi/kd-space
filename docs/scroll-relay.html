@@ -1,0 +1,59 @@
+<!--
+  KD Space scroll relay — paste this whole block into deckergui.my's
+  index.html, immediately before </body>. No React changes needed.
+
+  It does nothing when the site is opened normally; it only activates when
+  KD Space embeds it in the navigable panel or on a 3D screen.
+-->
+<script>
+(function () {
+  'use strict';
+  if (window === window.parent) return; // standalone visit: stay inert
+
+  var role = null;
+  var lastApplied = null;
+  var lastReported = -1;
+  var queued = false;
+
+  function instantScroll(y) {
+    var html = document.documentElement;
+    var previous = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto'; // defeat "scroll-behavior: smooth"
+    window.scrollTo(0, y);
+    html.style.scrollBehavior = previous;
+  }
+
+  window.addEventListener('message', function (event) {
+    var data = event.data;
+    if (!data || typeof data !== 'object') return;
+
+    if (data.type === 'kd-scroll:init') {
+      role = data.role || 'screen';
+      lastApplied = window.scrollY;
+      return;
+    }
+
+    if (data.type === 'kd-scroll:apply' && typeof data.y === 'number') {
+      lastApplied = data.y;
+      instantScroll(data.y);
+    }
+  });
+
+  window.addEventListener('scroll', function () {
+    if (!role || queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      var y = Math.round(window.scrollY);
+
+      // Ignore the scroll event caused by a command from the parent.
+      if (lastApplied !== null && Math.abs(y - lastApplied) <= 2) return;
+      if (y === lastReported) return;
+
+      lastReported = y;
+      lastApplied = y;
+      window.parent.postMessage({ type: 'kd-scroll:report', role: role, y: y }, '*');
+    });
+  }, { passive: true });
+})();
+</script>
