@@ -95,11 +95,13 @@ export default class MessagingUI
     open()
     {
         this.panel.classList.add('visible')
+        this.toggle.classList.add('active')
         this.input.focus()
     }
 
     close()
     {
         this.panel.classList.remove('visible')
+        this.toggle.classList.remove('active')
     }
 }
