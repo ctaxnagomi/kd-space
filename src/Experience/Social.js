@@ -4,6 +4,7 @@
 
 const IDENTITY_KEY = 'kd-space-identity-v1'
 const SPACE_KEY = 'kd-space-space-v1'
+const PENDING_NAME_KEY = 'kd-space-pending-name'
 const SPACE_PARAM = 'space'
 
 export const IDENTITY_COLORS = [
@@ -92,6 +93,25 @@ export default class Social
                 guest: true,
                 createdAt: new Date().toISOString()
             }
+            this.writeJson(this.identityKey, identity)
+        }
+
+        // The intro screen writes the chosen name just before the room loads.
+        let pendingName = null
+        try
+        {
+            pendingName = localStorage.getItem(PENDING_NAME_KEY)
+            if(pendingName) localStorage.removeItem(PENDING_NAME_KEY)
+        }
+        catch(_error)
+        {
+            pendingName = null
+        }
+
+        if(pendingName)
+        {
+            identity.name = String(pendingName).trim().slice(0, 24) || identity.name
+            identity.guest = false
             this.writeJson(this.identityKey, identity)
         }
 

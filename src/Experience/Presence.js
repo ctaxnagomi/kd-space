@@ -1,10 +1,14 @@
-// Phase 3 presence: local-first "who is here" across tabs in the same browser.
-// The transport is BroadcastChannel (with a storage-event fallback), but the
-// data model is transport-agnostic so a signalling service can replace it later.
+// Presence: who is in a space, plus the transport used for chat signalling and
+// owner status. Local BroadcastChannel still works on its own; when a relay URL
+// is configured the same data model is carried over a WebSocket so visitors on
+// other devices can see each other and reach the room owner.
+
+import { getRelayUrl } from './RealtimeConfig.js'
 
 const CHANNEL_PREFIX = 'kd-space-presence-v1'
 const HEARTBEAT_MS = 4000
 const STALE_MS = 12000
+const IDLE_MS = 60000
 
 export default class Presence
 {
@@ -14,13 +18,24 @@ export default class Presence
         this.spaceId = _social.getSpace().id
         this.identity = _social.getIdentity()
         this.sessionId = this.createId()
+        this.isOwnerLocal = this.social.isOwner()
 
         this.peers = new Map()
         this.listeners = new Set()
         this.signalListeners = new Set()
+        this.statusListeners = new Set()
         this.running = false
 
+        this.remoteReady = false
+        this.remoteRole = null
+        this.remoteTransport = null
+        this.ownerInfo = null
+
+        this.activityStatus = 'online'
+        this.lastInput = Date.now()
+
         this.openTransport()
+        this.startActivity()
         this.start()
     }
 
@@ -45,15 +60,36 @@ export default class Presence
 
     openTransport()
     {
+        this.localTransport = this.createLocalTransport()
+
+        this.transport = {
+            send: (_message) =>
+            {
+                if(this.remoteReady && this.remoteTransport)
+                    this.remoteTransport.send(_message)
+                else
+                    this.localTransport.send(_message)
+            },
+            close: () =>
+            {
+                this.localTransport.close()
+                if(this.remoteTransport) this.remoteTransport.close()
+            }
+        }
+
+        this.openRemoteTransport()
+    }
+
+    createLocalTransport()
+    {
         if(typeof BroadcastChannel !== 'undefined')
         {
             const channel = new BroadcastChannel(`${CHANNEL_PREFIX}:${this.spaceId}`)
             channel.onmessage = (_event) => this.receive(_event.data)
-            this.transport = {
+            return {
                 send: (_message) => channel.postMessage(_message),
                 close: () => channel.close()
             }
-            return
         }
 
         // Older Safari: storage events reach every other tab on the same origin.
@@ -71,7 +107,8 @@ export default class Presence
             }
         }
         window.addEventListener('storage', onStorage)
-        this.transport = {
+
+        return {
             send: (_message) =>
             {
                 try
@@ -88,6 +125,146 @@ export default class Presence
         }
     }
 
+    openRemoteTransport()
+    {
+        const baseUrl = getRelayUrl()
+        if(!baseUrl || !window.WebSocket) return
+
+        let socket
+        try
+        {
+            socket = new WebSocket(`${baseUrl}/space/${this.spaceId}`)
+        }
+        catch(_error)
+        {
+            return
+        }
+
+        this.remoteTransport = {
+            send: (_message) =>
+            {
+                if(socket.readyState !== 1) return
+
+                // Messaging publishes rtc-* envelopes; the relay expects a
+                // targeted signal frame so only the intended peer receives it.
+                if(_message.type && _message.type.indexOf('rtc-') === 0 && _message.payload && _message.payload.to)
+                {
+                    socket.send(JSON.stringify({
+                        type: 'signal',
+                        signalType: _message.type,
+                        to: _message.payload.to,
+                        payload: _message.payload,
+                        spaceId: this.spaceId,
+                        sessionId: this.sessionId
+                    }))
+                    return
+                }
+
+                socket.send(JSON.stringify(_message))
+            },
+            close: () =>
+            {
+                try
+                {
+                    socket.close()
+                }
+                catch(_error)
+                {
+                    // Already closed.
+                }
+            }
+        }
+
+        socket.addEventListener('open', () =>
+        {
+            this.remoteReady = true
+            socket.send(JSON.stringify({
+                ...this.envelope('hello'),
+                claimsOwner: this.isOwnerLocal,
+                status: this.activityStatus
+            }))
+            this.emit()
+        })
+
+        socket.addEventListener('message', (_event) =>
+        {
+            let message
+            try
+            {
+                message = JSON.parse(_event.data)
+            }
+            catch(_error)
+            {
+                return
+            }
+            this.receive(message)
+        })
+
+        socket.addEventListener('close', () =>
+        {
+            this.remoteReady = false
+            this.remoteRole = null
+            this.ownerInfo = null
+            this.emit()
+            this.emitStatus()
+        })
+
+        socket.addEventListener('error', () =>
+        {
+            // The close handler restores the local-only fallback.
+        })
+    }
+
+    startActivity()
+    {
+        const mark = () =>
+        {
+            this.lastInput = Date.now()
+            this.updateActivityStatus()
+        }
+
+        this.activityEvents = [
+            ['pointermove', window, mark],
+            ['pointerdown', window, mark],
+            ['keydown', window, mark],
+            ['wheel', window, mark],
+            ['touchstart', window, mark]
+        ]
+        for(const [name, target, handler] of this.activityEvents)
+            target.addEventListener(name, handler, { passive: true })
+
+        this.onVisibility = () => this.updateActivityStatus()
+        document.addEventListener('visibilitychange', this.onVisibility)
+        this.activityTimer = window.setInterval(() => this.updateActivityStatus(), 5000)
+    }
+
+    updateActivityStatus()
+    {
+        let status = 'online'
+        if(document.visibilityState !== 'visible') status = 'offline'
+        else if(Date.now() - this.lastInput >= IDLE_MS) status = 'idle'
+
+        if(status === this.activityStatus) return
+
+        this.activityStatus = status
+        this.sendStatus(status)
+        this.emitStatus()
+    }
+
+    sendStatus(_status)
+    {
+        if(!this.remoteReady || !this.remoteTransport) return
+
+        this.remoteTransport.send({
+            type: 'status',
+            spaceId: this.spaceId,
+            sessionId: this.sessionId,
+            status: _status,
+            name: this.identity.name,
+            sentAt: Date.now()
+        })
+    }
+
     start()
     {
         if(this.running) return
@@ -100,7 +277,11 @@ export default class Presence
             this.prune()
         }, HEARTBEAT_MS)
 
-        this.onLeave = () => this.send('bye')
+        this.onLeave = () =>
+        {
+            this.sendStatus('offline')
+            this.send('bye')
+        }
         window.addEventListener('pagehide', this.onLeave)
         window.addEventListener('beforeunload', this.onLeave)
     }
@@ -108,10 +289,15 @@ export default class Presence
     destroy()
     {
         if(!this.running) return
+        this.sendStatus('offline')
         this.send('bye')
         window.clearInterval(this.heartbeat)
+        window.clearInterval(this.activityTimer)
         window.removeEventListener('pagehide', this.onLeave)
         window.removeEventListener('beforeunload', this.onLeave)
+        document.removeEventListener('visibilitychange', this.onVisibility)
+        for(const [name, target, handler] of this.activityEvents)
+            target.removeEventListener(name, handler)
         this.transport.close()
         this.running = false
         this.peers.clear()
@@ -120,12 +306,52 @@ export default class Presence
 
     send(_type)
     {
-        this.transport.send(this.envelope(_type))
+        const message = this.envelope(_type)
+        if(_type === 'ping') message.status = this.activityStatus
+        this.transport.send(message)
     }
 
     receive(_message)
     {
-        if(!_message || _message.spaceId !== this.spaceId) return
+        if(!_message || typeof _message !== 'object') return
+
+        if(_message.type === 'welcome')
+        {
+            this.remoteRole = _message.role || null
+            this.emit()
+            return
+        }
+
+        if(_message.type === 'roster')
+        {
+            this.applyRoster(_message)
+            return
+        }
+
+        if(_message.type === 'status')
+        {
+            this.ownerInfo = {
+                name: _message.name || (this.ownerInfo && this.ownerInfo.name) || 'Room owner',
+                status: _message.status || 'offline'
+            }
+            this.emitStatus()
+            return
+        }
+
+        if(_message.type === 'signal')
+        {
+            this.emitSignal({
+                type: _message.signalType,
+                sessionId: _message.from,
+                payload: _message.payload,
+                sentAt: Date.now()
+            })
+            return
+        }
+
+        if(_message.type === 'pong') return
+
+        if(_message.spaceId !== this.spaceId) return
         if(!_message.sessionId || _message.sessionId === this.sessionId) return
 
         // Hand every message to transport-agnostic listeners before the presence
@@ -146,6 +372,8 @@ export default class Presence
             id: _message.identity.id,
             name: _message.identity.name,
             color: _message.identity.color || '#00e5ff',
+            role: _message.role || 'visitor',
+            status: _message.status || 'online',
             lastSeen: Date.now()
         })
 
@@ -153,6 +381,53 @@ export default class Presence
         // for the next heartbeat.
         if(_message.type === 'hello') this.send('ping')
         this.emit()
+    }
+
+    applyRoster(_message)
+    {
+        let owner = null
+        this.peers.clear()
+
+        for(const peer of Array.isArray(_message.peers) ? _message.peers : [])
+        {
+            if(!peer || !peer.sessionId) continue
+
+            if(peer.sessionId === this.sessionId)
+            {
+                this.remoteRole = peer.role || null
+                continue
+            }
+
+            this.peers.set(peer.sessionId, {
+                sessionId: peer.sessionId,
+                id: peer.identity && peer.identity.id,
+                name: peer.identity && peer.identity.name ? peer.identity.name : 'Guest',
+                color: peer.identity && peer.identity.color ? peer.identity.color : '#00e5ff',
+                role: peer.role || 'visitor',
+                status: peer.status || 'online',
+                lastSeen: Date.now()
+            })
+
+            if(peer.role === 'owner') owner = peer
+        }
+
+        if(owner)
+        {
+            this.ownerInfo = {
+                name: owner.identity && owner.identity.name ? owner.identity.name : 'Room owner',
+                status: owner.status || 'offline'
+            }
+        }
+        else if(_message.ownerName)
+        {
+            this.ownerInfo = {
+                name: _message.ownerName,
+                status: _message.ownerStatus || 'offline'
+            }
+        }
+
+        this.emit()
+        this.emitStatus()
     }
 
     prune()
@@ -179,6 +454,7 @@ export default class Presence
             id: this.identity.id,
             name: this.identity.name,
             color: this.identity.color,
+            role: this.remoteRole || (this.isOwnerLocal ? 'owner' : 'visitor'),
             isSelf: true
         }
     }
@@ -193,10 +469,31 @@ export default class Presence
         return 1 + this.peers.size
     }
 
+    getOwnerInfo()
+    {
+        if(this.ownerInfo) return { ...this.ownerInfo }
+
+        if(this.remoteRole === 'owner' || this.isOwnerLocal)
+            return { name: this.identity.name, status: this.activityStatus }
+
+        return { name: 'Room owner', status: 'offline' }
+    }
+
+    isConnectedToRelay()
+    {
+        return this.remoteReady
+    }
+
     onChange(_callback)
     {
         this.listeners.add(_callback)
         return () => this.listeners.delete(_callback)
+    }
+
+    onOwnerStatus(_callback)
+    {
+        this.statusListeners.add(_callback)
+        return () => this.statusListeners.delete(_callback)
     }
 
     publish(_type, _payload)
@@ -218,5 +515,11 @@ export default class Presence
     emit()
     {
         for(const callback of this.listeners) callback(this.getPeers())
+    }
+
+    emitStatus()
+    {
+        const info = this.getOwnerInfo()
+        for(const callback of this.statusListeners) callback(info)
     }
 }

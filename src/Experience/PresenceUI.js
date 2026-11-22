@@ -16,6 +16,7 @@ export default class PresenceUI
         this.count = document.querySelector('.presence-count')
         this.popover = document.querySelector('.presence-popover')
         this.list = document.querySelector('.presence-list')
+        this.note = document.querySelector('.presence-note')
 
         if(!this.root) return
 
@@ -48,6 +49,11 @@ export default class PresenceUI
         const self = this.presence.getSelf()
         const people = [self, ...this.presence.getPeers()]
 
+        if(this.note)
+            this.note.textContent = this.presence.isConnectedToRelay()
+                ? 'Live across devices · relay connected'
+                : 'Same-browser tabs · local-first'
+
         this.count.textContent = `${people.length} online`
 
         this.dots.textContent = ''
@@ -63,7 +69,8 @@ export default class PresenceUI
             const dot = this.makeDot(person, 'presence-row-dot')
             const name = document.createElement('span')
             name.className = 'presence-row-name'
-            name.textContent = person.isSelf ? `${person.name} (you)` : person.name
+            const role = person.role === 'owner' ? ' (owner)' : ''
+            name.textContent = person.isSelf ? `${person.name} (you)${role}` : `${person.name}${role}`
 
             row.appendChild(dot)
             row.appendChild(name)

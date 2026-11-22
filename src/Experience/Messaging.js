@@ -50,7 +50,14 @@ export default class Messaging
         const existing = this.connections.get(_sessionId)
         if(existing) return existing
 
-        const pc = new RTCPeerConnection({ iceServers: [] })
+        // STUN lets real devices discover each other; TURN would be needed for
+        // the most restrictive symmetric-NAT networks.
+        const pc = new RTCPeerConnection({
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        })
         const connection = { pc, channel: null, ready: false }
         this.connections.set(_sessionId, connection)
 

@@ -197,7 +197,7 @@ export default class Studio
         let index = 0
         for(const object of [ ...this.scene.children ])
         {
-            if(studioHelpers.has(object) || object.isLight || object.isCamera) continue
+            if(studioHelpers.has(object) || object.isLight || object.isCamera || object.userData.kdSystem) continue
 
             index++
             const id = `stock-${index}`

@@ -11,6 +11,7 @@ import Screen from './Screen.js'
 import DeskPlant from './DeskPlant.js'
 import DeskLamp from './DeskLamp.js'
 import WallPortrait from './WallPortrait.js'
+import OwnerPlaque from './OwnerPlaque.js'
 import { DEFAULT_YOUTUBE_URL, DEFAULT_SITE_URL } from './Screen.js'
 
 export default class World
@@ -39,6 +40,7 @@ export default class World
                 this.setDeskPlant()
                 this.setDeskLamp()
                 this.setWallPortrait()
+                this.setOwnerPlaque()
             }
         })
     }
@@ -91,6 +93,11 @@ export default class World
     setWallPortrait()
     {
         this.wallPortrait = new WallPortrait()
+    }
+
+    setOwnerPlaque()
+    {
+        this.ownerPlaque = new OwnerPlaque()
     }
 
     setScreens()
@@ -218,6 +225,7 @@ export default class World
 
         if(this.pcScreen) this.pcScreen.update()
         if(this.macScreen) this.macScreen.update()
+        if(this.ownerPlaque) this.ownerPlaque.update()
     }
 
     destroy()

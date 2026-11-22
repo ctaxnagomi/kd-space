@@ -125,10 +125,12 @@ browsers. The widget above the profile chip shows a live count, stacked color
 dots and a **In this space** list. Each tab gets its own session id, so multiple
 tabs sharing one local identity appear as separate presences.
 
-This is deliberately limited to one browser — presence is local-first and no
-data leaves the device. The transport is isolated behind `send()`/`receive()`
-and `onChange()`, so phase 4 can swap in a hosted signalling service without
-touching the UI or the peer model.
+By default this stays in one browser — no data leaves the device. When a relay
+URL is configured, `Presence` also opens a WebSocket to `/space/<id>` on the
+Cloudflare Worker and uses it for rosters, signalling and owner status; the
+BroadcastChannel path remains the offline/local fallback. The transport is
+isolated behind `send()`/`receive()` and `onChange()`, so swapping transports
+never touches the UI or peer model.
 
 **Phase 4** adds peer-to-peer chat. `Presence.publish()` / `onSignal()` carry
 SDP offers, answers and ICE candidates over the same space-scoped channel. The
@@ -139,6 +141,29 @@ over host candidates. The **Chat** button top-left opens a slide-in panel with
 a live connection count and a composer. Peers are torn down as soon as presence
 reports a tab leaving. Swapping `onSignal()`/`publish()` for a hosted service is
 the only change needed to take chat cross-device.
+
+**Live relay, visitor names and the owner plaque**
+
+- **Copy Space Link** still produces a unique `?space=<id>` link. Anyone who
+  opens it is asked for a display name on the intro screen before entering;
+  that name is what appears in the owner's presence list and chat.
+- `worker/index.js` + `worker/room.js` are a small Cloudflare Worker and
+  Durable Object that host one WebSocket bus per space. They relay presence
+  rosters, owner status and WebRTC signalling between real devices. No messages
+  are stored. See `worker/README.md` for deployment (`npx wrangler deploy`).
+- Point the site at the worker with `?relay=wss%3A%2F%2F<host>` (URL-encoded) or
+  `window.KD_SPACE_RELAY_URL` before the bundle loads. With no relay configured,
+  the original same-browser transport keeps working unchanged.
+- A framed **Room Owner Status** plaque sits on the back wall beside the
+  monitor. It reads `{owner name} is online / idle / offline` and changes color
+  automatically: **online** while the room tab is visible with recent
+  mouse/key/touch input, **idle** after 60 seconds without input, and
+  **offline** when the tab is hidden or closed. The owner broadcasts those
+  transitions over the relay; visitors see them on their own plaque.
+- Chat now uses STUN servers so WebRTC data channels can connect across
+  devices; a TURN server would be needed for the most restrictive networks.
+- The plaque is marked as a system object, so Studio Mode does not list it or
+  save it in layout links.
 
 ---
 
