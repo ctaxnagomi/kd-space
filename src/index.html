@@ -54,12 +54,42 @@
         <button class="intro-enter-btn">Enter Room</button>
     </div>
 
-    <button class="studio-mode-btn">Studio</button>
-
-    <div class="area-switcher">
-        <button class="area-btn active" data-area="indoor">Indoor</button>
-        <button class="area-btn" data-area="outdoor">Outdoor</button>
-    </div>
+    <nav class="floating-nav" aria-label="Space navigation">
+        <button class="nav-item" data-nav="chat" title="Messages">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.3a.7.7 0 0 1-1.1-.55V16A2.5 2.5 0 0 1 4 13.5v-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="nav-label">Chat</span>
+        </button>
+        <button class="nav-item" data-nav="studio" title="Studio mode">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    <path d="M4 7.5 12 12l8-4.5M12 12v9" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="nav-label">Studio</span>
+        </button>
+        <button class="nav-item" data-nav="status" title="Owner status plaque">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M3 12h4l2.5-6 4 12 2.5-6h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="nav-label">Status</span>
+        </button>
+        <button class="nav-item" data-nav="room" title="Switch indoor / outdoor">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                    <path d="M9.5 20v-6h5v6" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                </svg>
+            </span>
+            <span class="nav-label">Room <span class="nav-value">IN</span></span>
+        </button>
+    </nav>
 
     <div class="presence-widget">
         <button class="presence-toggle">
@@ -191,12 +221,6 @@
         </div>
     </div>
 
-    <button class="chat-toggle" title="Messages">
-        <svg class="chat-toggle-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.3a.7.7 0 0 1-1.1-.55V16A2.5 2.5 0 0 1 4 13.5v-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
-        </svg>
-        <span>Chat</span>
-    </button>
     <div class="chat-panel">
         <div class="chat-header">
             <span>Messages</span>

@@ -93,7 +93,7 @@ export default class Studio
         this.objectList = document.querySelector('.studio-object-list')
         this.removeBtn = document.querySelector('.studio-remove-btn')
         this.transformBtns = document.querySelectorAll('.studio-transform-btn')
-        this.modeBtn = document.querySelector('.studio-mode-btn')
+        this.modeBtn = document.querySelector('.floating-nav .nav-item[data-nav="studio"]')
         this.closeBtn = document.querySelector('.studio-panel-close')
         this.saveBtn = document.querySelector('.studio-save-btn')
         this.loadBtn = document.querySelector('.studio-load-btn')
@@ -109,7 +109,8 @@ export default class Studio
         this.loadBtn.addEventListener('click', () => this.loadLayout())
         this.shareBtn.addEventListener('click', () => this.copyShareLink())
         this.resetBtn.addEventListener('click', () => this.resetLayout())
-        this.modeBtn.addEventListener('click', () => this.toggle())
+        // The floating nav owns the Studio click; the panel's close button still
+        // uses toggle() directly.
         this.closeBtn.addEventListener('click', () => this.toggle())
         this.uploadBtn.addEventListener('click', () => this.fileInput.click())
         this.fileInput.addEventListener('change', (event) => this.handleUpload(event))
@@ -233,8 +234,13 @@ export default class Studio
     {
         this.active = !this.active
         this.panel.classList.toggle('visible', this.active)
-        this.modeBtn.classList.toggle('active', this.active)
-        this.modeBtn.textContent = this.active ? 'Exit Studio' : 'Studio'
+        if(this.modeBtn)
+        {
+            this.modeBtn.classList.toggle('active', this.active)
+            const label = this.modeBtn.querySelector('.nav-label')
+            if(label) label.textContent = this.active ? 'Exit' : 'Studio'
+        }
+        if(this.experience.floatingNav) this.experience.floatingNav.sync()
 
         this.gridHelper.visible = this.active
         this.ambientLight.visible = this.active

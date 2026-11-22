@@ -114,6 +114,16 @@ export default class OwnerPlaque
         this.texture.needsUpdate = true
     }
 
+    setVisible(_visible)
+    {
+        if(this.model && this.model.group) this.model.group.visible = !!_visible
+    }
+
+    isVisible()
+    {
+        return !!(this.model && this.model.group && this.model.group.visible)
+    }
+
     update()
     {
         const presence = this.experience.presence

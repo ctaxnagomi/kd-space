@@ -137,10 +137,20 @@ SDP offers, answers and ICE candidates over the same space-scoped channel. The
 peer with the lexicographically smaller session id always offers, which avoids
 simultaneous-offer glare. Each pair gets a real `RTCPeerConnection` with a
 `kd-chat` data channel; no STUN/TURN is needed because same-browser tabs connect
-over host candidates. The **Chat** button top-left opens a slide-in panel with
-a live connection count and a composer. Peers are torn down as soon as presence
-reports a tab leaving. Swapping `onSignal()`/`publish()` for a hosted service is
-the only change needed to take chat cross-device.
+over host candidates. The **Chat** item in the bottom-center floating nav opens
+a slide-in panel with a live connection count and a composer. Peers are torn
+down as soon as presence reports a tab leaving. Swapping `onSignal()`/`publish()`
+for a hosted service is the only change needed to take chat cross-device.
+
+**Floating navigation dock**
+
+A macOS-style dock floats at the bottom center after entering a room. It holds
+**Chat**, **Studio**, **Status** and **Room**: Chat toggles the message panel,
+Studio toggles Studio Mode, Status shows/hides the 3D owner-status plaque
+(remembered locally), and Room switches between Indoor and Outdoor (the label
+reads `IN` / `OUT`). Hovering, focusing, selecting or tapping a dock item
+magnifies its icon; the icons immediately beside the focused item rise slightly,
+like a MacBook dock.
 
 **Live relay, visitor names and the owner plaque**
 
@@ -171,7 +181,7 @@ the only change needed to take chat cross-device.
   and mailbox were modelled in Blender as one `outdoorRoom.glb` (source export
   from a dedicated Blender scene) and loaded by `src/Experience/OutdoorRoom.js`.
   The baked room, Google LEDs, Loupedeck buttons and coffee steam remain
-  interior-only. Use the **Indoor / Outdoor** buttons at the top to jump between
+  interior-only. Use the **Room** item in the floating dock to jump between
   areas; the camera also pans/orbits across the whole world.
 - Visitors see only the **Upload GLB/GLTF** control in Studio Mode. All other
   Studio sections (primitives, props, screens, transform, object list and layout

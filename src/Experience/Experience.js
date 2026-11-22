@@ -22,6 +22,7 @@ import MessagingUI from './MessagingUI.js'
 import ScreenCapture from './ScreenCapture.js'
 import ScrollSync from './ScrollSync.js'
 import ModelTransfer from './ModelTransfer.js'
+import FloatingNav from './FloatingNav.js'
 
 import assets from './assets.js'
 
@@ -66,6 +67,7 @@ export default class Experience
         this.setPresence()
         this.setModelTransfer()
         this.setMessaging()
+        this.setFloatingNav()
 
         this.sizes.on('resize', () =>
         {
@@ -203,6 +205,11 @@ export default class Experience
     {
         this.messaging = new Messaging(this.presence)
         this.messagingUI = new MessagingUI()
+    }
+
+    setFloatingNav()
+    {
+        this.floatingNav = new FloatingNav()
     }
 
     update()

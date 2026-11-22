@@ -9,7 +9,9 @@ export default class MessagingUI
         this.experience = new Experience()
         this.messaging = this.experience.messaging
 
-        this.toggle = document.querySelector('.chat-toggle')
+        // Chat lives in the floating nav now; FloatingNav owns its click so this
+        // class only handles the panel and message transport.
+        this.toggle = document.querySelector('.floating-nav .nav-item[data-nav="chat"]')
         this.panel = document.querySelector('.chat-panel')
         this.closeBtn = document.querySelector('.chat-close')
         this.statusEl = document.querySelector('.chat-status')
@@ -17,9 +19,8 @@ export default class MessagingUI
         this.input = document.querySelector('.chat-input')
         this.sendBtn = document.querySelector('.chat-send')
 
-        if(!this.toggle) return
+        if(!this.panel || !this.closeBtn || !this.input || !this.sendBtn) return
 
-        this.toggle.addEventListener('click', () => this.open())
         this.closeBtn.addEventListener('click', () => this.close())
         this.sendBtn.addEventListener('click', () => this.submit())
         this.input.addEventListener('keydown', (_event) =>
@@ -95,13 +96,20 @@ export default class MessagingUI
     open()
     {
         this.panel.classList.add('visible')
-        this.toggle.classList.add('active')
+        if(this.toggle) this.toggle.classList.add('active')
+        this.syncNav()
         this.input.focus()
     }
 
     close()
     {
         this.panel.classList.remove('visible')
-        this.toggle.classList.remove('active')
+        if(this.toggle) this.toggle.classList.remove('active')
+        this.syncNav()
+    }
+
+    syncNav()
+    {
+        if(this.experience.floatingNav) this.experience.floatingNav.sync()
     }
 }

@@ -31,18 +31,3 @@ enterBtn.addEventListener('click', () =>
     }
 })
 
-document.querySelectorAll('.area-btn').forEach((_button) =>
-{
-    _button.addEventListener('click', () =>
-    {
-        if(!window.experience || !window.experience.navigation) return
-
-        const area = _button.dataset.area
-        window.experience.navigation.focusArea(area)
-
-        document.querySelectorAll('.area-btn').forEach((_other) =>
-            _other.classList.toggle('active', _other === _button)
-        )
-    })
-})
-
