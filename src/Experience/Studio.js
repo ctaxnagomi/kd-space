@@ -101,6 +101,10 @@ export default class Studio
         this.resetBtn = document.querySelector('.studio-reset-btn')
         this.statusEl = document.querySelector('.studio-status')
 
+        // Visitors only get the upload control; all editing tools stay hidden.
+        this.isVisitor = !(this.experience.social && this.experience.social.isOwner())
+        if(this.isVisitor && this.panel) this.panel.classList.add('visitor')
+
         this.saveBtn.addEventListener('click', () => this.saveLayout())
         this.loadBtn.addEventListener('click', () => this.loadLayout())
         this.shareBtn.addEventListener('click', () => this.copyShareLink())
@@ -216,6 +220,15 @@ export default class Studio
         this.updateObjectList()
     }
 
+    // The relay's role is authoritative once connected (a visitor opening the
+    // owner's share link on another device must not inherit owner tools).
+    setVisitorRole(_visitor)
+    {
+        if(this.isVisitor === _visitor) return
+        this.isVisitor = _visitor
+        if(this.panel) this.panel.classList.toggle('visitor', _visitor)
+    }
+
     toggle()
     {
         this.active = !this.active
@@ -248,9 +261,26 @@ export default class Studio
     handleUpload(event)
     {
         const file = event.target.files[0]
+        event.target.value = ''
         if(!file) return
 
-        const url = URL.createObjectURL(file)
+        // Visitors submit to the owner over the relay. If no relay is live we
+        // still place the model locally so the control always does something.
+        if(this.isVisitor && this.experience.modelTransfer)
+        {
+            this.experience.modelTransfer.submit(file).then((_sent) =>
+            {
+                if(!_sent) this.addLocalUpload(file)
+            })
+            return
+        }
+
+        this.addLocalUpload(file)
+    }
+
+    addLocalUpload(_file)
+    {
+        const url = URL.createObjectURL(_file)
         this.gltfLoader.load(url, (gltf) =>
         {
             const model = gltf.scene
@@ -262,28 +292,49 @@ export default class Studio
             {
                 const group = this.wrapModel(model, {
                     kind: 'upload',
-                    name: file.name,
+                    name: _file.name,
                     dataUrl: reader.result
                 })
-                group.name = file.name
-                this.addObject(group)
+                group.name = _file.name
+                this.addUploadToOutdoor(group)
             }
             reader.onerror = () =>
             {
-                const group = this.wrapModel(model, { kind: 'upload', name: file.name })
-                group.name = file.name
-                this.addObject(group)
+                const group = this.wrapModel(model, { kind: 'upload', name: _file.name })
+                group.name = _file.name
+                this.addUploadToOutdoor(group)
             }
-            reader.readAsDataURL(file)
+            reader.readAsDataURL(_file)
 
             URL.revokeObjectURL(url)
-        }, undefined, (error) =>
+        }, undefined, (_error) =>
         {
-            console.error('Failed to load model:', error)
+            console.error('Failed to load model:', _error)
             URL.revokeObjectURL(url)
             this.setStatus('Could not read that model file.', 'error')
         })
-        event.target.value = ''
+    }
+
+    getUploadParent()
+    {
+        const outdoor = this.experience.world && this.experience.world.outdoorRoom
+        return outdoor ? outdoor.modelsGroup : this.scene
+    }
+
+    placeUpload(_object)
+    {
+        const outdoor = this.experience.world && this.experience.world.outdoorRoom
+        if(outdoor) _object.position.copy(outdoor.getSpawnPosition())
+        return _object
+    }
+
+    // Every uploaded model — owner's own or a visitor's approved submission —
+    // is parented to the Outdoor Room, never to the interior scene.
+    addUploadToOutdoor(_object)
+    {
+        this.placeUpload(_object)
+        this.addObject(_object)
+        return _object
     }
 
     normalizeModel(_model)
@@ -385,11 +436,19 @@ export default class Studio
                 child.material = child.material || new THREE.MeshStandardMaterial()
             }
         })
-        this.scene.add(object)
+        const parent = this.getParentFor(object)
+        parent.add(object)
         this.objects.push(object)
         this.selectedIndex = this.objects.length - 1
         this.selectObject(this.selectedIndex)
         this.updateObjectList()
+    }
+
+    getParentFor(_object)
+    {
+        const source = _object.userData.kdSource
+        if(source && source.kind === 'upload') return this.getUploadParent()
+        return this.scene
     }
 
     selectObject(index)
@@ -414,7 +473,7 @@ export default class Studio
         if(this.selectedIndex < 0 || !this.objects[this.selectedIndex]) return
 
         const obj = this.objects[this.selectedIndex]
-        this.scene.remove(obj)
+        if(obj.parent) obj.parent.remove(obj)
         this.transformControls.detach()
         this.objects.splice(this.selectedIndex, 1)
         this.selectedIndex = -1
@@ -805,7 +864,8 @@ export default class Studio
             const object = await this.restoreObject(entry)
             if(!object) continue
 
-            this.scene.add(object)
+            const parent = this.getParentFor(object)
+            parent.add(object)
             this.objects.push(object)
 
             if(Array.isArray(entry.position)) object.position.fromArray(entry.position)
@@ -829,7 +889,9 @@ export default class Studio
         this.scene.remove(this.transformControls)
 
         for(const object of this.objects)
-            this.scene.remove(object)
+        {
+            if(object.parent) object.parent.remove(object)
+        }
 
         this.objects = []
         this.selectedIndex = -1

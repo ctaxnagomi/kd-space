@@ -21,6 +21,7 @@ import Messaging from './Messaging.js'
 import MessagingUI from './MessagingUI.js'
 import ScreenCapture from './ScreenCapture.js'
 import ScrollSync from './ScrollSync.js'
+import ModelTransfer from './ModelTransfer.js'
 
 import assets from './assets.js'
 
@@ -63,6 +64,7 @@ export default class Experience
         this.setScrollSync()
         this.setProfileChip()
         this.setPresence()
+        this.setModelTransfer()
         this.setMessaging()
 
         this.sizes.on('resize', () =>
@@ -190,6 +192,11 @@ export default class Experience
     {
         this.presence = new Presence(this.social)
         this.presenceUI = new PresenceUI()
+    }
+
+    setModelTransfer()
+    {
+        this.modelTransfer = new ModelTransfer(this.studio)
     }
 
     setMessaging()

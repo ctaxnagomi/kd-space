@@ -51,7 +51,9 @@ export class SpaceRoom
                 sessionId = id
                 const claimsOwner = !!message.claimsOwner
 
-                if(!this.ownerSessionId && (claimsOwner || !this.ownerIdentity))
+                // Only the device that actually owns the space claims the owner
+                // seat. A visitor who arrives first must never be mistaken for it.
+                if(claimsOwner && (!this.ownerSessionId || !this.sessions.has(this.ownerSessionId)))
                 {
                     this.ownerSessionId = sessionId
                     this.ownerIdentity = message.identity || {}
@@ -99,6 +101,24 @@ export class SpaceRoom
                 return
             }
 
+            // Relay model submissions and the owner's review decision to the
+            // addressed peer. Chunks are small enough to stay under the 1 MiB
+            // WebSocket message limit.
+            if(message.type.indexOf('model-') === 0 && message.to)
+            {
+                const target = this.sessions.get(String(message.to))
+                if(target)
+                {
+                    this.send(target.socket, {
+                        type: message.type,
+                        from: sessionId,
+                        spaceId: message.spaceId,
+                        payload: message.payload
+                    })
+                }
+                return
+            }
+
             if(message.type === 'status' && sessionId === this.ownerSessionId)
             {
                 const status = OWNER_STATUSES.includes(message.status) ? message.status : 'online'
@@ -124,6 +144,8 @@ export class SpaceRoom
             if(sessionId === this.ownerSessionId)
             {
                 this.ownerStatus = 'offline'
+                // Free the seat so a reloading owner can reclaim it.
+                this.ownerSessionId = null
                 this.broadcast({
                     type: 'status',
                     status: 'offline',

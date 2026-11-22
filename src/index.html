@@ -56,6 +56,11 @@
 
     <button class="studio-mode-btn">Studio</button>
 
+    <div class="area-switcher">
+        <button class="area-btn active" data-area="indoor">Indoor</button>
+        <button class="area-btn" data-area="outdoor">Outdoor</button>
+    </div>
+
     <div class="presence-widget">
         <button class="presence-toggle">
             <span class="presence-dots"></span>
@@ -96,10 +101,12 @@
             <button class="studio-panel-close">&times;</button>
         </div>
         <div class="studio-panel-body">
-            <div class="studio-section">
+            <div class="studio-section studio-import">
                 <label class="studio-label">Import</label>
                 <input type="file" class="studio-file-input" accept=".glb,.gltf">
                 <button class="studio-upload-btn">Upload GLB/GLTF</button>
+                <div class="studio-visitor-note">Visitors: your model is sent to the room owner for review. Approved models appear in the Outdoor Room.</div>
+                <div class="studio-status"></div>
             </div>
             <div class="studio-section">
                 <label class="studio-label">Primitives</label>
@@ -168,7 +175,18 @@
                     <button class="studio-share-btn">Copy Share Link</button>
                     <button class="studio-reset-btn">Reset Layout</button>
                 </div>
-                <div class="studio-status"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="model-review">
+        <div class="model-review-card">
+            <div class="model-review-title">New model submission</div>
+            <div class="model-review-meta"></div>
+            <div class="model-review-progress"></div>
+            <div class="model-review-actions">
+                <button class="model-review-accept">Add to Outdoor Room</button>
+                <button class="model-review-decline">Decline</button>
             </div>
         </div>
     </div>

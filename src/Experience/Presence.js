@@ -24,12 +24,14 @@ export default class Presence
         this.listeners = new Set()
         this.signalListeners = new Set()
         this.statusListeners = new Set()
+        this.modelListeners = new Set()
         this.running = false
 
         this.remoteReady = false
         this.remoteRole = null
         this.remoteTransport = null
         this.ownerInfo = null
+        this.ownerSessionId = null
 
         this.activityStatus = 'online'
         this.lastInput = Date.now()
@@ -162,6 +164,11 @@ export default class Presence
 
                 socket.send(JSON.stringify(_message))
             },
+            // Targeted relay frames (model submissions) bypass the rtc-* rewrite.
+            sendRaw: (_frame) =>
+            {
+                if(socket.readyState === 1) socket.send(JSON.stringify(_frame))
+            },
             close: () =>
             {
                 try
@@ -205,6 +212,7 @@ export default class Presence
             this.remoteReady = false
             this.remoteRole = null
             this.ownerInfo = null
+            this.ownerSessionId = null
             this.emit()
             this.emitStatus()
         })
@@ -318,7 +326,15 @@ export default class Presence
         if(_message.type === 'welcome')
         {
             this.remoteRole = _message.role || null
+            this.ownerSessionId = _message.ownerSessionId || this.ownerSessionId
             this.emit()
+            return
+        }
+
+        // Model submissions/reviews are relayed frames addressed via `to`.
+        if(typeof _message.type === 'string' && _message.type.indexOf('model-') === 0)
+        {
+            this.emitModel(_message)
             return
         }
 
@@ -386,6 +402,7 @@ export default class Presence
     applyRoster(_message)
     {
         let owner = null
+        this.ownerSessionId = _message.ownerSessionId || null
         this.peers.clear()
 
         for(const peer of Array.isArray(_message.peers) ? _message.peers : [])
@@ -484,6 +501,45 @@ export default class Presence
         return this.remoteReady
     }
 
+    getOwnerSessionId()
+    {
+        return this.ownerSessionId
+    }
+
+    // Send a targeted frame to the room owner through the relay. Returns false
+    // when there is no live owner to receive it so callers can fall back local.
+    sendToOwner(_type, _payload)
+    {
+        if(!this.remoteReady || !this.remoteTransport || !this.remoteTransport.sendRaw) return false
+        if(!this.ownerSessionId) return false
+
+        this.remoteTransport.sendRaw({
+            type: _type,
+            to: this.ownerSessionId,
+            from: this.sessionId,
+            spaceId: this.spaceId,
+            payload: _payload,
+            sentAt: Date.now()
+        })
+        return true
+    }
+
+    sendToSession(_sessionId, _type, _payload)
+    {
+        if(!this.remoteReady || !this.remoteTransport || !this.remoteTransport.sendRaw) return false
+        if(!_sessionId) return false
+
+        this.remoteTransport.sendRaw({
+            type: _type,
+            to: _sessionId,
+            from: this.sessionId,
+            spaceId: this.spaceId,
+            payload: _payload,
+            sentAt: Date.now()
+        })
+        return true
+    }
+
     onChange(_callback)
     {
         this.listeners.add(_callback)
@@ -505,6 +561,17 @@ export default class Presence
     {
         this.signalListeners.add(_callback)
         return () => this.signalListeners.delete(_callback)
+    }
+
+    onModel(_callback)
+    {
+        this.modelListeners.add(_callback)
+        return () => this.modelListeners.delete(_callback)
+    }
+
+    emitModel(_message)
+    {
+        for(const callback of this.modelListeners) callback(_message)
     }
 
     emitSignal(_message)

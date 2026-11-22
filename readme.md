@@ -165,6 +165,29 @@ the only change needed to take chat cross-device.
 - The plaque is marked as a system object, so Studio Mode does not list it or
   save it in layout links.
 
+**Outdoor Room and visitor model submissions**
+
+- A second area sits to the right of the interior. The turf, scattered grass
+  and mailbox were modelled in Blender as one `outdoorRoom.glb` (source export
+  from a dedicated Blender scene) and loaded by `src/Experience/OutdoorRoom.js`.
+  The baked room, Google LEDs, Loupedeck buttons and coffee steam remain
+  interior-only. Use the **Indoor / Outdoor** buttons at the top to jump between
+  areas; the camera also pans/orbits across the whole world.
+- Visitors see only the **Upload GLB/GLTF** control in Studio Mode. All other
+  Studio sections (primitives, props, screens, transform, object list and layout
+  tools) are hidden. The owner keeps the full panel.
+- A visitor's file is base64-encoded, split into ~256 KB frames and relayed to
+  the room owner over the same WebSocket (5 MB per file cap, nothing stored on
+  the server). The owner gets a review card with sender, filename, size and
+  transfer progress, then chooses **Add to Outdoor Room** or **Decline**; the
+  visitor gets the result back in their Studio status. With no relay connected,
+  the upload falls back to a local placement so the control still works.
+- **Every** uploaded model is parented to the Outdoor Room's `modelsGroup`, so
+  uploads can never appear inside the interior. Approved models spawn on a ring
+  in the courtyard and are included in the owner's saved layout.
+- The outdoor scenery and its lights are marked as system objects, so Studio
+  Mode does not list or save them; only uploaded models are catalogued.
+
 ---
 
 ## Architecture

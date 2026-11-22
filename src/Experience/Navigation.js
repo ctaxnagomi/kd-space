@@ -25,7 +25,7 @@ export default class Navigation
         this.view.spherical.smoothed = this.view.spherical.value.clone()
         this.view.spherical.smoothing = 0.005
         this.view.spherical.limits = {}
-        this.view.spherical.limits.radius = { min: 10, max: 50 }
+        this.view.spherical.limits.radius = { min: 10, max: 70 }
         this.view.spherical.limits.phi = { min: 0.01, max: Math.PI * 0.5 }
         this.view.spherical.limits.theta = { min: - Math.PI * 0.5, max: 0 }
 
@@ -35,9 +35,9 @@ export default class Navigation
         this.view.target.smoothed = this.view.target.value.clone()
         this.view.target.smoothing = 0.005
         this.view.target.limits = {}
-        this.view.target.limits.x = { min: - 4, max: 4 }
-        this.view.target.limits.y = { min: 1, max: 6 }
-        this.view.target.limits.z = { min: - 4, max: 4 }
+        this.view.target.limits.x = { min: - 4, max: 18 }
+        this.view.target.limits.y = { min: 1, max: 8 }
+        this.view.target.limits.z = { min: - 4, max: 8 }
 
         this.view.drag = {}
         this.view.drag.delta = {}
@@ -172,6 +172,24 @@ export default class Navigation
         
         window.addEventListener('mousewheel', this.view.onWheel, { passive: false })
         window.addEventListener('wheel', this.view.onWheel, { passive: false })
+    }
+
+    // Jump between the interior and the outdoor courtyard. The existing
+    // smoothing animates the move, so this still feels like orbiting the world.
+    focusArea(_area)
+    {
+        const outdoor = _area === 'outdoor'
+
+        this.view.target.value.set(
+            outdoor ? 14 : 0,
+            outdoor ? 1.4 : 2,
+            outdoor ? 0 : 0
+        )
+        this.view.spherical.value.set(
+            outdoor ? 20 : 30,
+            outdoor ? Math.PI * 0.38 : Math.PI * 0.35,
+            -Math.PI * 0.25
+        )
     }
 
     update()

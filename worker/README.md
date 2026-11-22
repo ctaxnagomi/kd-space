@@ -5,9 +5,13 @@ live WebSocket bus. It carries:
 
 - presence rosters (who is here, and who owns the room),
 - owner status (`online` / `idle` / `offline`),
-- WebRTC signalling (`rtc-offer`, `rtc-answer`, `rtc-ice`) relayed to one peer.
+- WebRTC signalling (`rtc-offer`, `rtc-answer`, `rtc-ice`) relayed to one peer,
+- visitor GLB/GLTF submissions (`model-start`, `model-chunk`, `model-end`) and
+  the owner's `model-result`, addressed to one peer.
 
-No messages are stored. One Durable Object is created per space id.
+No messages are stored. One Durable Object is created per space id. Model files
+are capped at 5 MB client-side and split into ~256 KB frames so each WebSocket
+message stays under the platform limit.
 
 ## Deploy
 

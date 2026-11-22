@@ -21,6 +21,7 @@ enterBtn.addEventListener('click', () =>
     }
 
     introScreen.classList.add('hidden')
+    document.body.classList.add('room-entered')
 
     if(!window.experience)
     {
@@ -28,5 +29,20 @@ enterBtn.addEventListener('click', () =>
             targetElement: document.querySelector('.experience')
         })
     }
+})
+
+document.querySelectorAll('.area-btn').forEach((_button) =>
+{
+    _button.addEventListener('click', () =>
+    {
+        if(!window.experience || !window.experience.navigation) return
+
+        const area = _button.dataset.area
+        window.experience.navigation.focusArea(area)
+
+        document.querySelectorAll('.area-btn').forEach((_other) =>
+            _other.classList.toggle('active', _other === _button)
+        )
+    })
 })
 

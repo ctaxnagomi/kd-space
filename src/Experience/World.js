@@ -12,6 +12,7 @@ import DeskPlant from './DeskPlant.js'
 import DeskLamp from './DeskLamp.js'
 import WallPortrait from './WallPortrait.js'
 import OwnerPlaque from './OwnerPlaque.js'
+import OutdoorRoom from './OutdoorRoom.js'
 import { DEFAULT_YOUTUBE_URL, DEFAULT_SITE_URL } from './Screen.js'
 
 export default class World
@@ -41,6 +42,7 @@ export default class World
                 this.setDeskLamp()
                 this.setWallPortrait()
                 this.setOwnerPlaque()
+                this.setOutdoorRoom()
             }
         })
     }
@@ -98,6 +100,11 @@ export default class World
     setOwnerPlaque()
     {
         this.ownerPlaque = new OwnerPlaque()
+    }
+
+    setOutdoorRoom()
+    {
+        this.outdoorRoom = new OutdoorRoom()
     }
 
     setScreens()
