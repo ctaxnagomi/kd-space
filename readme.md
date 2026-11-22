@@ -254,6 +254,16 @@ Settings persist in `kd-space-screen-settings-v1`.
 > not expose a cross-origin iframe's URL to the parent page, so clicking a link
 > *inside* the panel iframe cannot be mirrored.
 
+**Live projection:** clicking a screen opens the panel and asks to capture this
+browser tab. Accept the browser's share picker (choose **This tab**) and
+`ScreenCapture.js` crops the capture to the panel iframe's rectangle on every
+frame and paints it onto the 3D screen — scrolling, clicks, video and animation
+inside the panel all appear live on the monitor. The **Project ▣ / Stop ▣**
+button in the panel header toggles it; closing the panel or stopping sharing
+restores the normal iframe. A window or whole-screen capture is projected in
+full instead of cropped. Nothing is uploaded or recorded; the stream stays in
+the page and ends when you stop sharing.
+
 **Real-time scroll mirroring:** an embedded page can opt into a small
 `postMessage` protocol so scrolling the panel scrolls the 3D screen in real
 time. `ScrollSync.js` registers both frames, sends a `kd-scroll:init` message

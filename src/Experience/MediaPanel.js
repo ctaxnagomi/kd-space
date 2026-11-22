@@ -14,6 +14,7 @@ export default class MediaPanel
         this.frameEl = document.querySelector('.media-panel-frame')
         this.closeBtn = document.querySelector('.media-panel-close')
         this.openBtn = document.querySelector('.media-panel-open')
+        this.projectBtn = document.querySelector('.media-panel-project')
         this.goBtn = document.querySelector('.media-panel-go')
         this.resizeHandle = document.querySelector('.media-panel-resize')
 
@@ -24,6 +25,17 @@ export default class MediaPanel
 
         this.closeBtn.addEventListener('click', () => this.close())
         this.openBtn.addEventListener('click', () => this.openExternally())
+        this.projectBtn.addEventListener('click', () =>
+        {
+            const capture = this.experience.screenCapture
+            if(!capture) return
+            if(capture.active) capture.stop()
+            else if(this.current)
+            {
+                const screen = this.sourceScreen || this.experience.world.pcScreen
+                capture.start(screen)
+            }
+        })
         this.goBtn.addEventListener('click', () => this.navigate(this.addressEl.value))
         this.addressEl.addEventListener('keydown', (_event) =>
         {
@@ -72,6 +84,9 @@ export default class MediaPanel
 
     open(_options = {})
     {
+        if(this.experience.screenCapture && this.experience.screenCapture.active)
+            this.experience.screenCapture.stop()
+
         const url = this.normalizeUrl(_options.url)
         const embedUrl = this.normalizeUrl(_options.embedUrl || _options.url)
         if(!url && !embedUrl) return
@@ -92,6 +107,12 @@ export default class MediaPanel
         this.showTarget(url, this.current.label, url)
     }
 
+    setProjecting(_active)
+    {
+        this.projectBtn.classList.toggle('active', _active)
+        this.projectBtn.textContent = _active ? 'Stop ▣' : 'Project ▣'
+    }
+
     openExternally()
     {
         if(!this.current) return
@@ -100,6 +121,7 @@ export default class MediaPanel
 
     close()
     {
+        if(this.experience.screenCapture) this.experience.screenCapture.stop()
         this.element.classList.remove('visible')
         this.frameEl.src = 'about:blank'
         if(this.experience.scrollSync)

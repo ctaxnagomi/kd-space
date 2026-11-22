@@ -19,6 +19,7 @@ import Presence from './Presence.js'
 import PresenceUI from './PresenceUI.js'
 import Messaging from './Messaging.js'
 import MessagingUI from './MessagingUI.js'
+import ScreenCapture from './ScreenCapture.js'
 import ScrollSync from './ScrollSync.js'
 
 import assets from './assets.js'
@@ -58,6 +59,7 @@ export default class Experience
         this.setNavigation()
         this.setStudio()
         this.setMedia()
+        this.setScreenCapture()
         this.setScrollSync()
         this.setProfileChip()
         this.setPresence()
@@ -169,6 +171,11 @@ export default class Experience
         this.interactive = new Interactive()
     }
 
+    setScreenCapture()
+    {
+        this.screenCapture = new ScreenCapture()
+    }
+
     setScrollSync()
     {
         this.scrollSync = new ScrollSync()
@@ -212,6 +219,9 @@ export default class Experience
 
         if(this.interactive)
             this.interactive.update()
+
+        if(this.screenCapture)
+            this.screenCapture.render()
 
         window.requestAnimationFrame(() =>
         {

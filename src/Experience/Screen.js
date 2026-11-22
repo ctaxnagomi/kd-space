@@ -179,12 +179,20 @@ export default class Screen
         this.overlay.iframe.setAttribute('referrerpolicy', 'no-referrer')
         this.overlay.iframe.src = 'about:blank'
         this.overlay.element.appendChild(this.overlay.iframe)
+
+        // Live tab capture is drawn here and mapped onto the mesh by the same transform.
+        this.overlay.projection = document.createElement('canvas')
+        this.overlay.projection.className = 'screen-projection'
+        this.overlay.projection.style.display = 'none'
+        this.overlay.element.appendChild(this.overlay.projection)
         document.body.appendChild(this.overlay.element)
 
         this.overlay.width = 960
         this.overlay.height = 540
         this.overlay.element.style.width = `${this.overlay.width}px`
         this.overlay.element.style.height = `${this.overlay.height}px`
+        this.overlay.projection.width = this.overlay.width
+        this.overlay.projection.height = this.overlay.height
 
         // Screen-space controls live outside the transformed overlay so they
         // stay a usable size and can receive pointer events.
@@ -213,9 +221,24 @@ export default class Screen
 
         this.isPlaying = true
         this.isMuted = true
+        this.projectionActive = false
 
         this.cameraInstance = this.camera.instance
         this.projected = this.corners.map(() => new THREE.Vector3())
+    }
+
+    setProjection(_active)
+    {
+        this.projectionActive = _active
+        this.overlay.projection.style.display = _active ? 'block' : 'none'
+        this.overlay.iframe.style.visibility = _active ? 'hidden' : 'visible'
+
+        if(_active) this.controls.style.visibility = 'hidden'
+    }
+
+    getProjectionCanvas()
+    {
+        return this.overlay.projection
     }
 
     sendYoutubeCommand(_function)
@@ -408,7 +431,7 @@ export default class Screen
         ])
 
         // Stack the fixed-size controls down the right edge of the screen.
-        if(this.settings.mode === 'youtube')
+        if(this.settings.mode === 'youtube' && !this.projectionActive)
         {
             const x = (destination[1][0] + destination[2][0]) / 2
             const y = (destination[1][1] + destination[2][1]) / 2

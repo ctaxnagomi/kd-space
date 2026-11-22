@@ -157,7 +157,8 @@ export default class Interactive
         const screen = this.getScreenFor(this.hovered)
         if(screen)
         {
-            screen.openPanel()
+            if(screen.openPanel() && this.experience.screenCapture)
+                this.experience.screenCapture.start(screen)
             return
         }
 
