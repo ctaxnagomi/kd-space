@@ -240,6 +240,22 @@ body
     flex: 1;
     overflow-y: auto;
     padding: 8px 24px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+.studio-panel-body::-webkit-scrollbar { width: 6px; }
+.studio-panel-body::-webkit-scrollbar-track { background: transparent; }
+.studio-panel-body::-webkit-scrollbar-thumb
+{
+    background: rgba(255, 255, 255, 0.14);
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+}
+.studio-panel-body::-webkit-scrollbar-thumb:hover
+{
+    background: rgba(255, 255, 255, 0.24);
+    background-clip: padding-box;
 }
 
 .studio-section
