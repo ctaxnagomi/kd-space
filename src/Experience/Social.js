@@ -4,6 +4,7 @@
 
 const IDENTITY_KEY = 'kd-space-identity-v1'
 const SPACE_KEY = 'kd-space-space-v1'
+const VISITOR_KEY = 'kd-space-visitors-v1'
 const PENDING_NAME_KEY = 'kd-space-pending-name'
 const SPACE_PARAM = 'space'
 
@@ -25,6 +26,7 @@ export default class Social
 
         this.identity = this.readOrCreateIdentity()
         this.spaceState = this.readSpaceState()
+        this.visitors = this.readVisitors()
         this.space = this.resolveSpace()
 
         this.syncUrl()
@@ -77,6 +79,56 @@ export default class Social
             console.warn('KD Space: could not save social state', _error)
             return false
         }
+    }
+
+    readVisitors()
+    {
+        const stored = this.readJson(VISITOR_KEY)
+        return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {}
+    }
+
+    addVisitor(_spaceId, _person)
+    {
+        if(!_person) return false
+
+        const id = _person.id || _person.sessionId
+        if(!id || id === this.identity.id) return false
+
+        const spaceId = String(_spaceId || this.space.id)
+        const list = Array.isArray(this.visitors[spaceId]) ? this.visitors[spaceId] : []
+        const name = String(_person.name || 'Guest').trim().slice(0, 24) || 'Guest'
+        const color = /^#[0-9a-f]{6}$/i.test(_person.color || '') ? _person.color : '#00e5ff'
+        const role = _person.role === 'owner' ? 'owner' : 'visitor'
+        const now = Date.now()
+
+        const existing = list.find((_visitor) => _visitor.id === id)
+        let changed = false
+
+        if(existing)
+        {
+            existing.lastSeen = now
+            if(existing.name !== name) { existing.name = name; changed = true }
+            if(existing.color !== color) { existing.color = color; changed = true }
+            if(existing.role !== role) { existing.role = role; changed = true }
+        }
+        else
+        {
+            list.push({ id, name, color, role, firstSeen: now, lastSeen: now })
+            changed = true
+        }
+
+        list.sort((_a, _b) => _b.lastSeen - _a.lastSeen)
+        this.visitors[spaceId] = list.slice(0, 50)
+
+        if(changed) this.writeJson(VISITOR_KEY, this.visitors)
+        return changed
+    }
+
+    getVisitors(_spaceId)
+    {
+        const spaceId = String(_spaceId || this.space.id)
+        const list = Array.isArray(this.visitors[spaceId]) ? this.visitors[spaceId] : []
+        return list.map((_visitor) => ({ ..._visitor })).sort((_a, _b) => _b.lastSeen - _a.lastSeen)
     }
 
     readOrCreateIdentity()

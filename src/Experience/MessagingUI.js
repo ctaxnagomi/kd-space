@@ -8,6 +8,7 @@ export default class MessagingUI
     {
         this.experience = new Experience()
         this.messaging = this.experience.messaging
+        this.presence = this.messaging.presence
 
         // Chat lives in the floating nav now; FloatingNav owns its click so this
         // class only handles the panel and message transport.
@@ -15,6 +16,9 @@ export default class MessagingUI
         this.panel = document.querySelector('.chat-panel')
         this.closeBtn = document.querySelector('.chat-close')
         this.statusEl = document.querySelector('.chat-status')
+        this.viewingEl = document.querySelector('.chat-viewing')
+        this.visitedEl = document.querySelector('.chat-visited')
+        this.visitedLabelEl = document.querySelector('.chat-visited-label')
         this.log = document.querySelector('.chat-log')
         this.input = document.querySelector('.chat-input')
         this.sendBtn = document.querySelector('.chat-send')
@@ -36,6 +40,10 @@ export default class MessagingUI
         this.messaging.onMessage((_message) => this.append(_message))
         this.messaging.onStatus((_count) => this.renderStatus(_count))
         this.renderStatus(this.messaging.getConnectedCount())
+
+        if(this.presence && this.presence.onChange)
+            this.unsubscribePresence = this.presence.onChange(() => this.renderAudience())
+        this.renderAudience()
 
         if(!this.messaging.supported)
         {
@@ -63,6 +71,31 @@ export default class MessagingUI
     renderStatus(_count)
     {
         this.statusEl.textContent = `${_count} connected`
+    }
+
+    renderAudience()
+    {
+        if(!this.presence || !this.viewingEl || !this.visitedEl) return
+
+        const self = this.presence.getSelf()
+        const isOwner = this.presence.isOwnerLocal || self.role === 'owner'
+        if(this.visitedLabelEl)
+            this.visitedLabelEl.textContent = isOwner ? 'Visited your room:' : 'Visited this room:'
+
+        const viewers = [self, ...this.presence.getPeers().filter((_peer) => _peer.status !== 'offline')]
+        const viewingNames = viewers.map((_person) =>
+            _person.isSelf ? `${_person.name} (you)` : _person.name
+        )
+        this.viewingEl.textContent = viewingNames.length ? viewingNames.join(', ') : 'Nobody yet'
+
+        const allVisitors = this.presence.getVisitors()
+            .filter((_person) => _person.id !== self.id)
+        const visitors = allVisitors.slice(0, 6)
+        const label = visitors.map((_person) => _person.name).join(', ')
+        const extra = Math.max(0, allVisitors.length - visitors.length)
+        this.visitedEl.textContent = label
+            ? `${label}${extra ? ` +${extra} more` : ''}`
+            : 'Nobody yet'
     }
 
     append(_message)
@@ -97,6 +130,7 @@ export default class MessagingUI
     {
         this.panel.classList.add('visible')
         if(this.toggle) this.toggle.classList.add('active')
+        this.renderAudience()
         this.syncNav()
         this.input.focus()
     }

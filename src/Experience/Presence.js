@@ -384,7 +384,7 @@ export default class Presence
         if(_message.type !== 'hello' && _message.type !== 'ping') return
         if(!_message.identity || typeof _message.identity.name !== 'string') return
 
-        this.peers.set(_message.sessionId, {
+        const peer = {
             sessionId: _message.sessionId,
             id: _message.identity.id,
             name: _message.identity.name,
@@ -392,7 +392,9 @@ export default class Presence
             role: _message.role || 'visitor',
             status: _message.status || 'online',
             lastSeen: Date.now()
-        })
+        }
+        this.peers.set(_message.sessionId, peer)
+        this.rememberVisitor(peer)
 
         // Answer a newcomer immediately so both sides converge without waiting
         // for the next heartbeat.
@@ -404,6 +406,13 @@ export default class Presence
     {
         if(!this.ownerInfo || !this.social || !this.social.setOwnerName) return
         this.social.setOwnerName(this.ownerInfo.name)
+    }
+
+    rememberVisitor(_peer)
+    {
+        if(!_peer || _peer.role === 'owner') return
+        if(!this.social || !this.social.addVisitor) return
+        this.social.addVisitor(this.spaceId, _peer)
     }
 
     applyRoster(_message)
@@ -422,7 +431,7 @@ export default class Presence
                 continue
             }
 
-            this.peers.set(peer.sessionId, {
+            const remotePeer = {
                 sessionId: peer.sessionId,
                 id: peer.identity && peer.identity.id,
                 name: peer.identity && peer.identity.name ? peer.identity.name : 'Guest',
@@ -430,7 +439,9 @@ export default class Presence
                 role: peer.role || 'visitor',
                 status: peer.status || 'online',
                 lastSeen: Date.now()
-            })
+            }
+            this.peers.set(peer.sessionId, remotePeer)
+            this.rememberVisitor(remotePeer)
 
             if(peer.role === 'owner') owner = peer
         }
@@ -487,6 +498,12 @@ export default class Presence
     getPeers()
     {
         return [...this.peers.values()].map((_peer) => ({ ..._peer, isSelf: false }))
+    }
+
+    getVisitors()
+    {
+        if(!this.social || !this.social.getVisitors) return []
+        return this.social.getVisitors(this.spaceId)
     }
 
     getCount()
