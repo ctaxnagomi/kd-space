@@ -178,6 +178,7 @@ export default class Social
         const space = {
             id: _id || this.createShortId(),
             ownerId: this.identity.id,
+            ownerName: this.identity.name,
             name: 'My KD Space',
             createdAt: new Date().toISOString()
         }
@@ -235,6 +236,14 @@ export default class Social
 
         this.identity.name = name
         this.writeJson(this.identityKey, this.identity)
+
+        // Keep shared-link hints in sync with the owner's display name.
+        for(const space of Object.values(this.spaceState.spaces))
+        {
+            if(space.ownerId === this.identity.id) space.ownerName = name
+        }
+        this.writeSpaceState()
+
         return this.getIdentity()
     }
 
@@ -267,6 +276,22 @@ export default class Social
         if(this.space.ownerId) return this.getSpace()
 
         this.space.ownerId = this.identity.id
+        this.space.ownerName = this.identity.name
+        this.spaceState.spaces[this.space.id] = this.space
+        this.writeSpaceState()
+        return this.getSpace()
+    }
+
+    // A visitor learns the real owner's name from the relay and caches it so the
+    // next visit can show an accurate intro hint before the relay connects.
+    setOwnerName(_name)
+    {
+        if(this.isOwner()) return this.getSpace()
+
+        const name = String(_name || '').trim().slice(0, 24)
+        if(!name || name === 'Room owner') return this.getSpace()
+
+        this.space.ownerName = name
         this.spaceState.spaces[this.space.id] = this.space
         this.writeSpaceState()
         return this.getSpace()

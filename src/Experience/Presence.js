@@ -350,6 +350,7 @@ export default class Presence
                 name: _message.name || (this.ownerInfo && this.ownerInfo.name) || 'Room owner',
                 status: _message.status || 'offline'
             }
+            this.cacheOwnerName()
             this.emitStatus()
             return
         }
@@ -399,6 +400,12 @@ export default class Presence
         this.emit()
     }
 
+    cacheOwnerName()
+    {
+        if(!this.ownerInfo || !this.social || !this.social.setOwnerName) return
+        this.social.setOwnerName(this.ownerInfo.name)
+    }
+
     applyRoster(_message)
     {
         let owner = null
@@ -443,6 +450,7 @@ export default class Presence
             }
         }
 
+        this.cacheOwnerName()
         this.emit()
         this.emitStatus()
     }

@@ -156,7 +156,11 @@ like a MacBook dock.
 
 - **Copy Space Link** still produces a unique `?space=<id>` link. Anyone who
   opens it is asked for a display name on the intro screen before entering;
-  that name is what appears in the owner's presence list and chat.
+  that name is what appears in the owner's presence list and chat. When the URL
+  arrives with a room id, the intro screen also shows `you are about to enter
+  {owner name} Room` beneath the logo; a plain visit with no incoming room id
+  shows no hint. The owner name is saved with the space and refreshed from the
+  relay roster, so shared links stay accurate.
 - `worker/index.js` + `worker/room.js` are a small Cloudflare Worker and
   Durable Object that host one WebSocket bus per space. They relay presence
   rosters, owner status and WebRTC signalling between real devices. No messages
