@@ -2,6 +2,8 @@
 // One Durable Object per space id keeps the roster and relays WebRTC offers,
 // answers, ICE candidates and owner status between real devices.
 
+export { SpaceRoom } from './room.js'
+
 export default {
     async fetch(_request, _env)
     {
