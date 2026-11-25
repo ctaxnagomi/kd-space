@@ -131,6 +131,46 @@ export default class Social
         return list.map((_visitor) => ({ ..._visitor })).sort((_a, _b) => _b.lastSeen - _a.lastSeen)
     }
 
+    // The relay returns the canonical visitor list for a space. Merge it with
+    // browser-local entries so history saved before a relay was connected is
+    // still visible, while the relay's names and timestamps win on conflict.
+    mergeVisitors(_spaceId, _list)
+    {
+        if(!Array.isArray(_list)) return false
+
+        const spaceId = String(_spaceId || this.space.id)
+        const merged = (Array.isArray(this.visitors[spaceId]) ? this.visitors[spaceId] : [])
+            .map((_visitor) => ({ ..._visitor }))
+
+        for(const entry of _list)
+        {
+            if(!entry || typeof entry !== 'object') continue
+
+            const id = String(entry.id || entry.sessionId || '')
+            if(!id || id === this.identity.id) continue
+
+            const name = String(entry.name || 'Guest').trim().slice(0, 24) || 'Guest'
+            const color = /^#[0-9a-f]{6}$/i.test(entry.color || '') ? entry.color : '#00e5ff'
+            const role = entry.role === 'owner' ? 'owner' : 'visitor'
+            const firstSeen = Number(entry.firstSeen) || Date.now()
+            const lastSeen = Number(entry.lastSeen) || firstSeen
+            const existing = merged.find((_visitor) => _visitor.id === id)
+
+            if(existing)
+                Object.assign(existing, { name, color, role, firstSeen, lastSeen })
+            else
+                merged.push({ id, name, color, role, firstSeen, lastSeen })
+        }
+
+        merged.sort((_a, _b) => (_b.lastSeen || 0) - (_a.lastSeen || 0))
+        const trimmed = merged.slice(0, 50)
+        const changed = JSON.stringify(trimmed) !== JSON.stringify(this.visitors[spaceId] || [])
+        this.visitors[spaceId] = trimmed
+
+        if(changed) this.writeJson(VISITOR_KEY, this.visitors)
+        return changed
+    }
+
     readOrCreateIdentity()
     {
         let identity = this.readJson(this.identityKey)

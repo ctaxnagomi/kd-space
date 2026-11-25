@@ -415,6 +415,12 @@ export default class Presence
         this.social.addVisitor(this.spaceId, _peer)
     }
 
+    applyVisitors(_list)
+    {
+        if(!this.social || !this.social.mergeVisitors) return
+        this.social.mergeVisitors(this.spaceId, _list)
+    }
+
     applyRoster(_message)
     {
         let owner = null
@@ -461,6 +467,7 @@ export default class Presence
             }
         }
 
+        this.applyVisitors(_message.visitors)
         this.cacheOwnerName()
         this.emit()
         this.emitStatus()

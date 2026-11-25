@@ -1,6 +1,8 @@
 // One Durable Object instance per KD Space room.
 
 const OWNER_STATUSES = ['online', 'idle', 'offline']
+const VISITOR_KEY = 'visitors'
+const VISITOR_LIMIT = 50
 
 export class SpaceRoom
 {
@@ -25,11 +27,11 @@ export class SpaceRoom
         return new Response(null, { status: 101, webSocket: pair[0] })
     }
 
-    handleSocket(_socket)
+    async handleSocket(_socket)
     {
         let sessionId = null
 
-        _socket.addEventListener('message', (_event) =>
+        _socket.addEventListener('message', async (_event) =>
         {
             let message
             try
@@ -74,7 +76,9 @@ export class SpaceRoom
                     role,
                     ownerSessionId: this.ownerSessionId
                 })
-                this.broadcastRoster()
+
+                if(role === 'visitor') await this.addVisitor(message.identity, sessionId)
+                await this.broadcastRoster()
                 return
             }
 
@@ -136,7 +140,7 @@ export class SpaceRoom
             }
         })
 
-        _socket.addEventListener('close', () =>
+        _socket.addEventListener('close', async () =>
         {
             if(!sessionId) return
             this.sessions.delete(sessionId)
@@ -153,7 +157,7 @@ export class SpaceRoom
                 })
             }
 
-            this.broadcastRoster()
+            await this.broadcastRoster()
         })
 
         _socket.addEventListener('error', () =>
@@ -180,8 +184,65 @@ export class SpaceRoom
         for(const session of this.sessions.values()) this.send(session.socket, _message)
     }
 
-    broadcastRoster()
+    async readVisitors()
     {
+        try
+        {
+            const stored = await this.state.storage.get(VISITOR_KEY)
+            return Array.isArray(stored) ? stored : []
+        }
+        catch(_error)
+        {
+            return []
+        }
+    }
+
+    async writeVisitors(_visitors)
+    {
+        try
+        {
+            await this.state.storage.put(VISITOR_KEY, _visitors)
+        }
+        catch(_error)
+        {
+            // Storage may be unavailable; live presence still works.
+        }
+    }
+
+    async addVisitor(_identity, _sessionId)
+    {
+        if(!_identity || typeof _identity !== 'object') return this.readVisitors()
+
+        const id = String(_identity.id || _sessionId || '')
+        if(!id) return this.readVisitors()
+
+        const name = String(_identity.name || 'Guest').trim().slice(0, 24) || 'Guest'
+        const color = /^#[0-9a-f]{6}$/i.test(_identity.color || '') ? _identity.color : '#00e5ff'
+        const now = Date.now()
+        const visitors = await this.readVisitors()
+
+        const existing = visitors.find((_visitor) => _visitor.id === id)
+        if(existing)
+        {
+            existing.name = name
+            existing.color = color
+            existing.role = 'visitor'
+            existing.lastSeen = now
+        }
+        else
+        {
+            visitors.push({ id, name, color, role: 'visitor', firstSeen: now, lastSeen: now })
+        }
+
+        visitors.sort((_a, _b) => (_b.lastSeen || 0) - (_a.lastSeen || 0))
+        const trimmed = visitors.slice(0, VISITOR_LIMIT)
+        await this.writeVisitors(trimmed)
+        return trimmed
+    }
+
+    async broadcastRoster()
+    {
+        const visitors = await this.readVisitors()
         const peers = []
         for(const [sessionId, session] of this.sessions)
         {
@@ -198,7 +259,8 @@ export class SpaceRoom
             peers,
             ownerSessionId: this.ownerSessionId,
             ownerStatus: this.ownerStatus,
-            ownerName: this.ownerIdentity && this.ownerIdentity.name ? this.ownerIdentity.name : ''
+            ownerName: this.ownerIdentity && this.ownerIdentity.name ? this.ownerIdentity.name : '',
+            visitors
         })
     }
 }
