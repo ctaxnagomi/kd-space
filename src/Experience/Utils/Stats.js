@@ -22,6 +22,11 @@ export default class Stats
         this.active = true
 
         document.body.appendChild(this.instance.dom)
+
+        // stats.js pins itself to the top-left with inline styles. Center the
+        // panel along the top edge instead, without fighting those styles in CSS.
+        this.instance.dom.style.left = '50%'
+        this.instance.dom.style.transform = 'translateX(-50%)'
     }
 
     deactivate()
